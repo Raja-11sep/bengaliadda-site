@@ -18,7 +18,7 @@ SITE = "https://bengaliadda.in"
 # While the new site is being built, search engines are asked not to list it (robots.txt and a
 # "noindex" tag on every page), so it only opens for people who type the address.
 # At launch: set HIDDEN = False, run build.py, upload.
-HIDDEN = True
+HIDDEN = False
 UPDATED_EN = "11 November 2026"
 UPDATED_BN = "১১ নভেম্বর ২০২৬"
 EMAIL = "bengaliadda.team@gmail.com"
