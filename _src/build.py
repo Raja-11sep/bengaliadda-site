@@ -49,7 +49,7 @@ HERO_PHOTO = "img/hero-friends.webp"
 HERO_PHOTO_FALLBACK = "img/story-6.webp"
 # HERO_STYLE "poster": the friends-on-the-ghat poster (img/hero-poster.webp; its old logo and words removed)
 # with our own chips, logo and words laid over it. "photo": the photo on the right, words on the left.
-HERO_STYLE = "poster"
+HERO_STYLE = "light"   # "light": the bright riverside home page (Nov 2026); "poster" / "photo": earlier versions
 
 # The "Join us" pages (join, ambassador, partners, creators, host) all send people to ONE Google Form,
 # so every application lands in one sheet. The form's first question is "How would you like to be
@@ -607,6 +607,62 @@ def home_hero_poster():
 </section>"""
 
 
+def home_hero_light():
+    """The bright home page hero: friends round a phone by the river at sunset, Howrah Bridge behind.
+    The picture (img/home-hero.webp, made by tools/make_home_hero.py from the mockup) keeps its five round
+    icons; their names, the big Mon Mela and its line are real text laid over it, placed in % of the
+    picture and sized in cqw so they stay in place at every width. Phones: a closer crop of the
+    friends, then the icons in a row and the words under it."""
+    icons = [  # file number, x centre in % of the picture, English, Bengali
+        (1, 39.0, "Find your<br>people", "নিজের<br>মানুষ খুঁজুন"),
+        (2, 48.7, "Join<br>addas", "আড্ডায়<br>যোগ দিন"),
+        (3, 57.8, "Explore<br>your city", "নিজের শহর<br>ঘুরে দেখুন"),
+        (4, 66.75, "Safe and<br>trusted", "নিরাপদ আর<br>ভরসার"),
+        (5, 76.6, "Feel at<br>home", "আপন<br>মনে হবে"),
+    ]
+    labels = "".join(f'<li style="left:{x}%">{both(en, bn)}</li>' for _, x, en, bn in icons)
+    row = "".join(f'<li><img src="{asset(f"img/home-icon-{n}.png")}" alt="" width="74" height="74"><span>{both(en, bn)}</span></li>'
+                  for n, _, en, bn in icons)
+    return f"""<section class="hero-l">
+  <div class="hero-l-frame">
+    <picture>
+      <source media="(max-width: 760px)" srcset="{asset("img/home-hero-m.webp")}" width="1242" height="430">
+      <img src="{asset("img/home-hero.webp")}" alt="Five friends laughing round a phone on the grass by the river at sunset, Howrah Bridge behind them"
+           width="1672" height="660" fetchpriority="high">
+    </picture>
+    <ul class="hero-l-labels" aria-hidden="true">{labels}</ul>
+    <div class="hero-l-text">
+      <h1>{both("Bengali Adda", "বাঙালি আড্ডা")}</h1>
+      <p>{both("Find your people, join addas, and be a part of Bengal's friendliest community.",
+               "নিজের মানুষ খুঁজুন, আড্ডায় যোগ দিন, আর হয়ে উঠুন বাংলার সবচেয়ে বন্ধুত্বপূর্ণ দলের অংশ।")}{SWOOSH}</p>
+    </div>
+    <svg class="hero-l-wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0 52C240 6 520 4 760 30c260 28 470 40 680 2v58H0z"/></svg>
+  </div>
+  <ul class="hero-l-row">{row}</ul>
+</section>"""
+
+
+def home_how():
+    """How it works in three steps, each with its drawing, over the green Kolkata skyline."""
+    steps = [
+        ("how-1", "Create your profile", "প্রোফাইল তৈরি করুন",
+         "Tell us about yourself: your interests, city and more.", "নিজের কথা বলুন: আপনার শখ, শহর আর আরও অনেক কিছু।"),
+        ("how-2", "Find and join addas", "আড্ডা খুঁজুন, যোগ দিন",
+         "Join an Adda Table nearby, or host your own.", "কাছের আড্ডা টেবিলে যোগ দিন, বা নিজেই বসান।"),
+        ("how-3", "Make new friends", "নতুন বন্ধু পান",
+         "Chat, meet and enjoy great conversations.", "চ্যাট করুন, দেখা করুন, জমিয়ে আড্ডা দিন।"),
+    ]
+    lis = "".join(
+        f"""<li><div><h3>{both(t_en, t_bn)}</h3><p>{both(d_en, d_bn)}</p></div>
+      <img src="{asset(f"img/{img}.webp")}" alt="" loading="lazy"></li>"""
+        for img, t_en, t_bn, d_en, d_bn in steps)
+    return f"""<section class="how-l" id="how" aria-labelledby="how-h">
+    <h2 id="how-h">{SPARK}<span>{both("How Bengali Adda works", "বাঙালি আড্ডা কীভাবে কাজ করে")}</span>{SPARK}</h2>
+    <ol>{lis}</ol>
+    <img class="skyline-strip" src="{asset("img/skyline-strip.webp")}" alt="" loading="lazy" width="1672" height="103">
+  </section>"""
+
+
 def home_gives():
     """Five cards right under the hero: what the app gives you, each with a small drawing."""
     cards = [
@@ -734,15 +790,15 @@ def home():
     html = f"""{head(HOME_TITLE_EN, HOME_TITLE_BN, HOME_DESCRIPTION, "", script("story.js") + script("motion.js") + script("match.js") + home_schema(faq))}
 <body class="home">
 {header(on_home=True)}
-{home_hero_poster() if HERO_STYLE == "poster" else home_hero()}
+{home_hero_light() if HERO_STYLE == "light" else home_hero_poster() if HERO_STYLE == "poster" else home_hero()}
 
 <main class="home-main">
-  {home_gives()}
+  {home_how() if HERO_STYLE == "light" else home_gives()}
 
   {story_section()}
 
-  <section class="how" aria-labelledby="how">
-    <h2 id="how">{both("How it works", "কীভাবে কাজ করে")}</h2>
+  <section class="how" aria-labelledby="inside">
+    <h2 id="inside">{both("Inside the app", "অ্যাপের ভেতরে")}</h2>
     <ol class="how-row">{steps_html}</ol>
     <p class="how-then">{icon("chat")}<span>{both("<b>Then connect.</b> The chat opens only when both of you say yes.",
                                                   "<b>তারপর কানেক্ট।</b> দুজনেই রাজি হলে তবেই চ্যাট খোলে।")}</span></p>
