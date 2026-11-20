@@ -9,6 +9,7 @@ import hashlib
 import json
 import pathlib
 import re
+from urllib.parse import quote
 
 from art import LOGO, alpana_tile, festoon, hero_art
 
@@ -33,6 +34,17 @@ PLAY_URL = ""
 # Empty both to hide the Google Play steps and offer only the APK.
 TEST_GROUP_URL = "https://groups.google.com/g/mon-mela-testers"
 TEST_JOIN_URL = "https://play.google.com/apps/testing/com.monmela.app"
+
+# Shared adda links open the app (Android App Links). APP_SHA256: the app signing key and the
+# upload key fingerprints from Play Console → Test and release → App integrity → App signing.
+# Public values, not secrets. Empty = no assetlinks.json (links then open this site's adda page).
+APP_ID = "com.monmela.app"
+APP_SHA256 = []
+
+# Campus ambassador and partner pages (ambassador.html, partners.html): their main buttons open
+# these Google Forms. Empty = the button opens an e-mail to us instead, with the questions in it.
+AMBASSADOR_FORM_URL = ""
+PARTNER_FORM_URL = ""
 
 # Our social pages: linked in the footer and listed in the structured data ("sameAs"),
 # which tells Google these pages belong to the same Bengali Adda.
@@ -168,7 +180,8 @@ def footer(on_home=False):
 
     explore = group("Explore", "ঘুরে দেখুন", [
         (f"{home}#how", "How it works", "কীভাবে কাজ করে"), (f"{home}#adda-h", "Adda Tables", "আড্ডা টেবিল"),
-        (f"{home}#safe", "Safety", "নিরাপত্তা"), (f"{home}#qa", "Questions", "প্রশ্ন")])
+        (f"{home}#safe", "Safety", "নিরাপত্তা"), (f"{home}#qa", "Questions", "প্রশ্ন"),
+        ("ambassador.html", "Campus ambassadors", "ক্যাম্পাস অ্যাম্বাসাডর"), ("partners.html", "Partner with us", "পার্টনার হোন")])
     help_ = group("Help", "সাহায্য", [
         ("terms.html", "Terms", "শর্তাবলি"), ("privacy.html", "Privacy", "প্রাইভেসি"),
         ("child-safety.html", "Child safety", "শিশু সুরক্ষা"), ("delete-account.html", "Delete account", "অ্যাকাউন্ট মুছুন")])
@@ -322,6 +335,13 @@ def icon(name):
         "pin": '<path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/>',
         "lock": '<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
         "adult": '<circle cx="12" cy="12" r="9.5"/><text x="12" y="15" text-anchor="middle">18+</text>',
+        "award": '<circle cx="12" cy="9" r="5"/><path d="M9 13.5L7.5 21l4.5-2.5 4.5 2.5-1.5-7.5"/>',
+        "star": '<path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/>',
+        "spark": '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18"/>',
+        "cup": '<path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5c0 1.5 1.5 1.5 1.5 3M12 3.5c0 1.5 1.5 1.5 1.5 3"/>',
+        "ball": '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M3.5 12h17M6 6c3 2 3 10 0 12M18 6c-3 2-3 10 0 12"/>',
+        "fest": '<path d="M4 20l4-12 8 8z"/><path d="M14 4v2M18 6l-1.5 1.5M20 10h-2"/>',
+        "book": '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v3H6.5"/>',
     }
     return f'<svg viewBox="0 0 24 24" class="icon" aria-hidden="true">{paths[name]}</svg>'
 
@@ -688,7 +708,7 @@ def sitemap():
     """sitemap.xml: every public page with today's date, so Google finds and re-reads them.
     The URLs match each page's canonical link."""
     today = datetime.date.today().isoformat()
-    paths = ["", "download", "privacy.html", "terms.html", "delete-account.html", "child-safety.html"]
+    paths = ["", "download", "ambassador", "partners", "privacy.html", "terms.html", "delete-account.html", "child-safety.html"]
     urls = "".join(f"  <url><loc>{SITE}/{p}</loc><lastmod>{today}</lastmod></url>\n" for p in paths)
     (ROOT / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -896,6 +916,301 @@ def download():
     (ROOT / "download.html").write_text(html, encoding="utf-8")
 
 
+def adda():
+    """bengaliadda.in/adda?id=…: where a shared Adda Table link lands when the app can't open it
+    (no app yet, iPhone, computer). With the app on Android, the link opens the table in the app
+    directly (App Links: .well-known/assetlinks.json) and this page never shows.
+    GitHub Pages serves adda.html at /adda. Not in the sitemap and noindex: it has no content of its own."""
+    get_url = PLAY_URL or f"{SITE}/download"  # people without the app
+    html = f"""{head("You're invited to an adda", "আপনাকে একটা আড্ডায় ডাকা হয়েছে",
+                    "Someone shared an Adda Table on Bengali Adda. Open it in the app to see who's going.",
+                    "adda", '<meta name="robots" content="noindex">' + chr(10) + script("adda.js"))}
+<body class="home dl">
+{header()}
+<section class="intro">
+  {festoon()}
+  <div class="intro-inner">
+    <div>
+      <h1>{both("You're invited to an adda", "আপনাকে একটা আড্ডায় ডাকা হয়েছে")}</h1>
+      <p class="lede">{both(
+          "Someone shared an Adda Table with you. Open it in the Bengali Adda app to see the topic, "
+          "who's going, and ask for a seat.",
+          "কেউ আপনার সঙ্গে একটা আড্ডা টেবিল শেয়ার করেছেন। বিষয়, কারা যাচ্ছেন দেখতে আর জায়গা চাইতে "
+          "বাঙালি আড্ডা অ্যাপে খুলুন।")}</p>
+
+      <!-- adda.js shows this on Android when the link has a table id. Without the app installed,
+           Android opens get_url instead. -->
+      <div class="actions" id="open" hidden>
+        <a class="btn btn-primary btn-big" id="open-btn" href="{get_url}"
+           data-host="bengaliadda.in" data-fallback="{get_url}">{both("Open in the app", "অ্যাপে খুলুন")}</a>
+      </div>
+      <p class="dl-meta" id="open-hint" hidden>{both(
+          "Don't have the app yet? The button takes you to Google Play.",
+          "অ্যাপ নেই? বোতামটা আপনাকে Google Play-তে নিয়ে যাবে।")}</p>
+
+      <div class="actions" id="get">
+        <a class="btn btn-ghost" href="{get_url}">{both("Get the app", "অ্যাপ নিন")}</a>
+      </div>
+
+      <!-- Shown by adda.js on iPhone and iPad -->
+      <div class="dl-note" id="ios" hidden>
+        <p>{both("Bengali Adda is on Android for now. The iPhone version comes later.",
+                 "বাঙালি আড্ডা এখন শুধু অ্যান্ড্রয়েডে। iPhone ভার্সন পরে আসবে।")}</p>
+      </div>
+      <p class="not-dating">{both("For friendship, not dating. Adults 18+ only.", "বন্ধুত্বের জন্য, ডেটিংয়ের জন্য নয়। শুধু ১৮+।")}</p>
+    </div>
+
+    <div class="dl-visual">
+      {phone("welcome", lazy=False)}
+    </div>
+  </div>
+</section>
+{footer()}
+</body>
+</html>
+"""
+    (ROOT / "adda.html").write_text(html, encoding="utf-8")
+
+
+def assetlinks():
+    """.well-known/assetlinks.json: proves to Android that this site belongs to the app, so
+    /adda links open the app without asking. Needs the app's SHA-256 signing fingerprints
+    (Play Console → App integrity). Written only once APP_SHA256 is filled in."""
+    if not APP_SHA256:
+        return
+    data = [{"relation": ["delegate_permission/common.handle_all_urls"],
+             "target": {"namespace": "android_app", "package_name": APP_ID,
+                        "sha256_cert_fingerprints": APP_SHA256}}]
+    folder = ROOT / ".well-known"
+    folder.mkdir(exist_ok=True)
+    (folder / "assetlinks.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
+def form_link(url, subject, body):
+    """A Google Form when we have one; until then an e-mail to us with the questions filled in."""
+    if url:
+        return url, ' target="_blank" rel="noopener"'
+    return f"mailto:{EMAIL}?subject={quote(subject)}&body={quote(body)}", ""
+
+
+def join_page(file, path, title, description, intro, art, main):
+    """Shared frame of the ambassador and partner pages: dusk intro with an Adda Table card pair, then sections."""
+    h1_en, h1_bn, lede_en, lede_bn, button, meta = intro
+    html = f"""{head(*title, description, path)}
+<body class="home join">
+{header()}
+<section class="intro">
+  {festoon()}
+  <div class="intro-inner">
+    <div>
+      <h1>{both(h1_en, h1_bn)}</h1>
+      <p class="lede">{both(lede_en, lede_bn)}</p>
+      <div class="actions">{button}</div>
+      <p class="dl-meta">{both(*meta)}</p>
+    </div>
+    <div class="adda-art join-art" aria-hidden="true">{art}</div>
+  </div>
+</section>
+<main class="home-main">
+{main}
+</main>
+{footer()}
+</body>
+</html>
+"""
+    (ROOT / file).write_text(html, encoding="utf-8")
+
+
+def steps_list(items):
+    """A numbered run of steps (the download page's dashed-line style), each with a title and a line."""
+    lis = "".join(f"<li><h3>{both(t_en, t_bn)}</h3><p>{both(d_en, d_bn)}</p></li>" for t_en, t_bn, d_en, d_bn in items)
+    return f"<ol>{lis}</ol>"
+
+
+def ambassador():
+    """bengaliadda.in/ambassador: the Founding Ambassador programme for college students (tried here first,
+    then moved to monmela.in)."""
+    href, target = form_link(AMBASSADOR_FORM_URL, "Campus ambassador application",
+                             "Name:\nCollege:\nCourse and year:\nAge:\nPhone / WhatsApp:\n"
+                             "Clubs or groups you run or are part of:\nThe first adda you'd host on campus:\n"
+                             "Android phone (yes/no):\nInstagram (optional):\n")
+    apply_btn = lambda cls: f'<a class="btn {cls}" href="{href}"{target}>{both("Apply now", "আবেদন করুন")}</a>'
+
+    steps = steps_list([
+        ("Try the app before launch", "লঞ্চের আগেই অ্যাপ চালান",
+         "We add you to the test. Use it for a week and tell us what to fix.",
+         "আমরা আপনাকে টেস্টে যোগ করব। এক সপ্তাহ ব্যবহার করে বলুন কী ঠিক করা দরকার।"),
+        ("Plan two campus addas", "ক্যাম্পাসে দুটো আড্ডার পরিকল্পনা",
+         "A cha adda after class, a fest-prep meetup, a match screening: pick the date and place with us.",
+         "ক্লাসের পর চায়ের আড্ডা, ফেস্টের প্রস্তুতি, খেলা দেখা: তারিখ আর জায়গা আমাদের সঙ্গে ঠিক করুন।"),
+        ("Host them in launch week", "লঞ্চের সপ্তাহে আড্ডা বসান",
+         "Open them as Adda Tables in the app and welcome the people who join.",
+         "অ্যাপে আড্ডা টেবিল হিসেবে খুলুন, আর যাঁরা আসেন তাঁদের স্বাগত জানান।"),
+        ("Bring your people", "নিজের লোকেদের আনুন",
+         "From launch day, invite 10 classmates, and send us a short voice note each week.",
+         "লঞ্চের দিন থেকে ১০ জন সহপাঠীকে ডাকুন, আর প্রতি সপ্তাহে একটা ছোট ভয়েস নোট পাঠান।"),
+    ])
+    perks = [
+        ("award", "Founding Ambassador certificate", "ফাউন্ডিং অ্যাম্বাসাডর সার্টিফিকেট",
+         "Signed by the founder, plus a LinkedIn recommendation when you finish all four steps.",
+         "প্রতিষ্ঠাতার সই করা, আর চারটে ধাপ শেষ করলে LinkedIn-এ সুপারিশ।"),
+        ("star", "Your name on this page", "এই পেজে আপনার নাম",
+         "With your college, and a shout-out on our Instagram, if you agree.",
+         "কলেজের নাম সহ, আর আপনি রাজি থাকলে আমাদের Instagram-এ উল্লেখ।"),
+        ("spark", "Free premium for life", "সারাজীবন বিনামূল্যে প্রিমিয়াম",
+         "Whatever premium features come later, you never pay for them.",
+         "পরে যে প্রিমিয়াম ফিচারই আসুক, আপনাকে কখনও টাকা দিতে হবে না।"),
+        ("chat", "A real say in the app", "অ্যাপে আপনার কথার দাম",
+         "Talk to the founder directly, try new features first, and shape what we build.",
+         "সরাসরি প্রতিষ্ঠাতার সঙ্গে কথা বলুন, নতুন ফিচার সবার আগে চালান, আর ঠিক করুন আমরা কী বানাব।"),
+        ("people", "A path to City Lead", "সিটি লিড হওয়ার সুযোগ",
+         "After 30 days, the most active ambassador leads the next campuses in the city.",
+         "৩০ দিন পরে সবচেয়ে সক্রিয় অ্যাম্বাসাডর শহরের পরের ক্যাম্পাসগুলোর দায়িত্ব নেবেন।"),
+    ]
+    perks_html = "".join(f"<li>{icon(i)}<div><h3>{both(t_en, t_bn)}</h3><p>{both(d_en, d_bn)}</p></div></li>"
+                         for i, t_en, t_bn, d_en, d_bn in perks)
+
+    def bullets(items):
+        return "<ul>" + "".join(f"<li>{both(en, bn)}</li>" for en, bn in items) + "</ul>"
+
+    who = bullets([
+        ("College students in West Bengal, 18 or older", "পশ্চিমবঙ্গের কলেজ পড়ুয়া, বয়স ১৮ বা তার বেশি"),
+        ("You already run or join things: a club, fest team, hostel group, sports team or quiz society",
+         "আপনি আগে থেকেই কিছু চালান বা তাতে আছেন: ক্লাব, ফেস্ট টিম, হস্টেলের দল, খেলার দল বা কুইজ সোসাইটি"),
+        ("An Android phone", "একটা অ্যান্ড্রয়েড ফোন"),
+    ])
+    know = bullets([
+        ("This is an unpaid volunteer role. There's no stipend, salary or job offer.",
+         "এটা অবৈতনিক স্বেচ্ছাসেবী ভূমিকা। কোনো স্টাইপেন্ড, বেতন বা চাকরির প্রস্তাব নেই।"),
+        ("Addas happen in public places only, like cafes, canteens and sports grounds.",
+         "আড্ডা হয় শুধু সবার জন্য খোলা জায়গায়, যেমন ক্যাফে, ক্যান্টিন আর খেলার মাঠ।"),
+        ("We never ask you to add people to groups or to share anyone's number.",
+         "আমরা কখনও কাউকে গ্রুপে যোগ করতে বা কারও নম্বর দিতে বলি না।"),
+        ("After you apply, we call you within a few days for a 10-minute chat.",
+         "আবেদনের পর কয়েক দিনের মধ্যে ১০ মিনিট কথা বলতে আমরা ফোন করব।"),
+    ])
+
+    main = f"""  <section class="steps" aria-labelledby="do">
+    <h2 id="do">{both("What you'll do", "আপনার কাজ")}</h2>
+    {steps}
+  </section>
+  <section class="perks" aria-labelledby="get">
+    <h2 id="get">{both("What you get", "আপনি যা পাবেন")}</h2>
+    <ul>{perks_html}</ul>
+  </section>
+  <section class="fit">
+    <div><h2>{both("Who can apply", "কারা আবেদন করতে পারেন")}</h2>{who}</div>
+    <div><h2>{both("Good to know", "জেনে রাখুন")}</h2>{know}</div>
+  </section>
+  <section class="cta-band">
+    {festoon()}
+    <h2>{both("Your campus, your adda", "আপনার ক্যাম্পাস, আপনার আড্ডা")}</h2>
+    <p>{both("We're starting with a few colleges. Apply now to be one of the first.",
+             "আমরা কয়েকটা কলেজ দিয়ে শুরু করছি। প্রথম দিকের একজন হতে এখনই আবেদন করুন।")}</p>
+    <div class="actions">{apply_btn("btn-primary btn-big")}</div>
+  </section>"""
+
+    join_page("ambassador.html", "ambassador",
+              ("Campus Ambassador programme | Bengali Adda", "ক্যাম্পাস অ্যাম্বাসাডর প্রোগ্রাম | বাঙালি আড্ডা"),
+              "Become a Founding Ambassador of Bengali Adda: plan small addas on your campus and lead the launch at your college.",
+              ("Bring adda back to your campus", "ক্যাম্পাসে আবার আড্ডা জমান",
+               "Become a Founding Ambassador of Bengali Adda. Plan small addas with people from your college, "
+               "help shape the app before it opens to everyone, and lead its launch on your campus.",
+               "বাঙালি আড্ডার ফাউন্ডিং অ্যাম্বাসাডর হোন। কলেজের মানুষদের সঙ্গে ছোট ছোট আড্ডার পরিকল্পনা করুন, "
+               "সবার জন্য খোলার আগেই অ্যাপটা গড়তে সাহায্য করুন, আর নিজের ক্যাম্পাসে লঞ্চের নেতৃত্ব দিন।",
+               apply_btn("btn-primary btn-big"),
+               ("A 30-day volunteer pilot for college students aged 18 and over.",
+                "১৮ বা তার বেশি বয়সী কলেজ পড়ুয়াদের জন্য ৩০ দিনের স্বেচ্ছাসেবী পাইলট।")),
+              adda_card("back", "Fest-prep adda, campus lawn", "ফেস্টের প্রস্তুতি আড্ডা, ক্যাম্পাসের লন",
+                        "Friday, 4 pm", "শুক্রবার, বিকেল ৪টে", 3, 6, full=False)
+              + adda_card("front", "Cha after class, college canteen", "ক্লাসের পর চা, কলেজ ক্যান্টিন",
+                          "Wednesday, 5 pm", "বুধবার, বিকেল ৫টা", 3, 5,
+                          tag=("Campus adda", "ক্যাম্পাস আড্ডা")),
+              main)
+
+
+def partners():
+    """bengaliadda.in/partners: cafes, sports venues, college fests and communities that host our addas
+    (tried here first, then moved to monmela.in)."""
+    href, target = form_link(PARTNER_FORM_URL, "Partnership with Bengali Adda",
+                             "Name of your place or group:\nType (cafe, restaurant, sports venue, fest, club, community):\n"
+                             "Area:\nContact person:\nPhone:\nQuiet days and hours:\nA perk you could offer groups:\n")
+    interest = both("I'm interested", "আমি আগ্রহী")
+    interest_btn = lambda cls: f'<a class="btn {cls}" href="{href}"{target}>{interest}</a>'
+    mail_btn = f'<a class="btn btn-ghost" href="mailto:{EMAIL}">{both("Write to us", "আমাদের লিখুন")}</a>'
+
+    kinds = [
+        ("cup", "Cafes and restaurants", "ক্যাফে আর রেস্তোরাঁ",
+         "Groups on slow weekday evenings, and a mention on our Instagram",
+         "সপ্তাহের ফাঁকা সন্ধেয় দল, আর আমাদের Instagram-এ উল্লেখ",
+         "A table you can keep for a group, and a small perk, like a free cha refill",
+         "একটা দলের জন্য একটা টেবিল, আর ছোট একটা সুবিধা, যেমন আরেক কাপ চা ফ্রি"),
+        ("ball", "Sports venues", "খেলার জায়গা",
+         "Players for empty off-peak slots at your turf, court or club",
+         "আপনার টার্ফ, কোর্ট বা ক্লাবের ফাঁকা স্লটে খেলোয়াড়",
+         "A group rate in those slots", "সেই স্লটে দলের জন্য কম দাম"),
+        ("fest", "College fests and clubs", "কলেজ ফেস্ট আর ক্লাব",
+         "An ice-breaker corner where students meet new people, and help with promotion",
+         "নতুন মানুষের সঙ্গে আলাপের একটা কর্নার, আর প্রচারে সাহায্য",
+         "A small space at your event, and our name on your posters",
+         "অনুষ্ঠানে একটু জায়গা, আর পোস্টারে আমাদের নাম"),
+        ("book", "Communities", "কমিউনিটি",
+         "Book clubs, running groups, quiz clubs: an easy way to bring new members to your meetups",
+         "বইয়ের ক্লাব, দৌড়ের দল, কুইজ ক্লাব: আপনার মিটআপে নতুন সদস্য আনার সহজ উপায়",
+         "One open Bengali Adda meetup a month", "মাসে একটা সবার জন্য খোলা বাঙালি আড্ডা মিটআপ"),
+    ]
+    cards = "".join(f"""<li>{icon(i)}<h3>{both(t_en, t_bn)}</h3>
+      <dl><dt>{both("You get", "আপনি পাবেন")}</dt><dd>{both(g_en, g_bn)}</dd>
+      <dt>{both("We ask", "আমরা চাই")}</dt><dd>{both(a_en, a_bn)}</dd></dl></li>"""
+                    for i, t_en, t_bn, g_en, g_bn, a_en, a_bn in kinds)
+
+    steps = steps_list([
+        ("Tell us about your place", "আপনার জায়গার কথা বলুন",
+         "Your quiet days and hours, and what you can offer a group.",
+         "কোন দিন আর কখন ফাঁকা থাকে, আর একটা দলকে কী দিতে পারেন।"),
+        ("We point hosts to you", "আয়োজকদের আপনার কাছে পাঠাই",
+         "When members plan an adda nearby, we suggest your place.",
+         "কাছাকাছি কেউ আড্ডার পরিকল্পনা করলে আমরা আপনার জায়গার কথা বলি।"),
+        ("Groups arrive", "দল আসে",
+         "Small groups of photo-verified members come in, and with your permission we share the best moments on Instagram.",
+         "ছবি-যাচাই করা সদস্যদের ছোট দল আসে, আর আপনার অনুমতি নিয়ে সেরা মুহূর্তগুলো আমরা Instagram-এ দিই।"),
+    ])
+
+    main = f"""  <section class="partner-kinds" aria-labelledby="who">
+    <h2 id="who">{both("Who we work with", "কাদের সঙ্গে কাজ করি")}</h2>
+    <ul>{cards}</ul>
+  </section>
+  <section class="steps" aria-labelledby="how">
+    <h2 id="how">{both("How it works", "কীভাবে হয়")}</h2>
+    {steps}
+  </section>
+  <section class="cta-band">
+    {festoon()}
+    <h2>{both("Let's talk", "চলুন কথা বলি")}</h2>
+    <p>{both("Fill in a short form or write to us, and we'll get back to you within two days.",
+             "একটা ছোট ফর্ম ভরুন বা আমাদের লিখুন, দু'দিনের মধ্যে উত্তর দেব।")}</p>
+    <div class="actions">{interest_btn("btn-primary btn-big")}{mail_btn}</div>
+  </section>"""
+
+    join_page("partners.html", "partners",
+              ("Partner with Bengali Adda", "বাঙালি আড্ডার পার্টনার হোন"),
+              "Cafes, sports venues, college fests and communities: host small Bengali Adda meetups and welcome new groups.",
+              ("Host addas with us", "আমাদের সঙ্গে আড্ডা জমান",
+               "Bengali Adda brings small, friendly groups of 4 to 6 people together at real places. "
+               "Welcome them in your quiet hours, and we'll help them find you.",
+               "বাঙালি আড্ডা ৪ থেকে ৬ জনের ছোট, বন্ধুত্বপূর্ণ দলকে আসল জায়গায় একসঙ্গে আনে। "
+               "আপনার ফাঁকা সময়ে তাঁদের স্বাগত জানান, আর আমরা তাঁদের আপনার কাছে পৌঁছে দেব।",
+               interest_btn("btn-primary btn-big"),
+               ("No fees and no contracts. It starts with a conversation.",
+                "কোনো ফি নেই, কোনো চুক্তি নেই। শুরুটা শুধু একটু কথা দিয়ে।")),
+              adda_card("back", "Badminton and adda, Salt Lake", "ব্যাডমিন্টন আর আড্ডা, সল্টলেক",
+                        "Sunday, 7 am", "রবিবার, সকাল ৭টা", 3, 4, full=False)
+              + adda_card("front", "Board games and cha, a cafe near you", "বোর্ড গেম আর চা, কাছের ক্যাফেতে",
+                          "Thursday, 6:30 pm", "বৃহস্পতিবার, সন্ধে ৬:৩০", 4, 6,
+                          tag=("Partner cafe", "পার্টনার ক্যাফে")),
+              main)
+
+
 (ROOT / "img" / "alpana.svg").write_text(alpana_tile(), encoding="utf-8")
 home()
 download()
@@ -911,5 +1226,9 @@ page("delete-account.html", "Delete your account", "অ্যাকাউন্�
 page("child-safety.html", "Child Safety Standards", "শিশু সুরক্ষা নীতি",
      f"Last updated: {UPDATED_EN}", f"সর্বশেষ আপডেট: {UPDATED_BN}",
      load("child.en.html"), load("child.bn.html"))
+adda()
+ambassador()
+partners()
+assetlinks()
 sitemap()
 print("built")
