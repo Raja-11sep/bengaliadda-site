@@ -19,7 +19,7 @@ SITE = "https://bengaliadda.in"
 # While the new site is being built, search engines are asked not to list it (robots.txt and a
 # "noindex" tag on every page), so it only opens for people who type the address.
 # At launch: set HIDDEN = False, run build.py, upload.
-HIDDEN = False
+HIDDEN = True
 UPDATED_EN = "11 November 2026"
 UPDATED_BN = "১১ নভেম্বর ২০২৬"
 EMAIL = "bengaliadda.team@gmail.com"
@@ -937,8 +937,9 @@ def sitemap():
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + urls + "</urlset>\n",
         encoding="utf-8")
-    # robots.txt: while HIDDEN, nothing may be crawled; afterwards everything, with the sitemap.
-    robots = "User-agent: *\nDisallow: /\n" if HIDDEN else f"User-agent: *\nAllow: /\n\nSitemap: {SITE}/sitemap.xml\n"
+    # robots.txt: crawling stays allowed while HIDDEN, because Google must read the pages to see the
+    # noindex tag and drop them (a blocked page can stay in search). No sitemap while HIDDEN.
+    robots = "User-agent: *\nAllow: /\n" if HIDDEN else f"User-agent: *\nAllow: /\n\nSitemap: {SITE}/sitemap.xml\n"
     (ROOT / "robots.txt").write_text(robots, encoding="utf-8")
 
 
