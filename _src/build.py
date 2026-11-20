@@ -41,6 +41,13 @@ TEST_JOIN_URL = "https://play.google.com/apps/testing/com.monmela.app"
 APP_ID = "com.monmela.app"
 APP_SHA256 = []
 
+# Home page redesign (Nov 2026), tried here before monmela.in. HOME_BRAND: the name the home page shows
+# in place of Bengali Adda (None = keep Bengali Adda). Mon Mela is the brand for good; this site only tests.
+HOME_BRAND = ("Mon Mela", "মনমেলা")
+# The hero's photo (wide, friends, no text on it). Until our own arrives: story photo 6, the ghat at sunset.
+HERO_PHOTO = "img/hero-friends.webp"
+HERO_PHOTO_FALLBACK = "img/story-6.webp"
+
 # The "Join us" pages (join, ambassador, partners, creators, host) all send people to ONE Google Form,
 # so every application lands in one sheet. The form's first question is "How would you like to be
 # part of Bengali Adda?" with exactly the ROLES labels below as its options.
@@ -490,6 +497,137 @@ def story_section():
   </section>"""
 
 
+# ---------------------------------------------------------------- home page pieces (Nov 2026 redesign)
+
+# Three short marigold strokes, like a hand-drawn "shine" mark beside a heading.
+SPARK = ('<svg class="spark" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 4v9M6 12l6 6M34 12l-6 6"/></svg>')
+# A brush-stroke underline under the hero's Bengali line.
+SWOOSH = ('<svg class="swoosh" viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true">'
+          '<path d="M4 15C80 5 180 3 296 9"/></svg>')
+
+# The five feature cards' drawings: flat shapes in the site's colours (viewBox 96 x 72).
+GIVES_ART = {
+    # three friends, arms round each other
+    "people": '<path d="M14 66c0-16 6-26 14-26s14 10 14 26z" fill="#F5B023"/><path d="M54 66c0-16 6-26 14-26s14 10 14 26z" fill="#D9482B"/>'
+              '<path d="M34 66c0-18 6-29 14-29s14 11 14 29z" fill="#0F766E"/>'
+              '<circle cx="28" cy="25" r="8" fill="#8D5524"/><circle cx="48" cy="21" r="8.5" fill="#A0673A"/><circle cx="68" cy="25" r="8" fill="#6B3E1F"/>'
+              '<path d="M20 24a8 8 0 0 1 16-2c-5-3-11-2-16 2z" fill="#13201E"/><path d="M39.5 20a8.5 8.5 0 0 1 17-1c-5-3-12-3-17 1z" fill="#13201E"/>'
+              '<path d="M60 25a8 8 0 0 1 16-3c-2 4-2 10 1 14-6-1-12-5-17-11z" fill="#13201E"/>',
+    # a small round table with two bhaars of cha, and seats around it
+    "table": '<ellipse cx="48" cy="40" rx="30" ry="9" fill="#0F766E"/><rect x="45" y="44" width="6" height="20" rx="2" fill="#115E59"/>'
+             '<rect x="34" y="62" width="28" height="5" rx="2.5" fill="#115E59"/>'
+             '<path d="M36 24h10l-2 12h-6z" fill="#C2552D"/><path d="M52 22h10l-2 13h-6z" fill="#C2552D"/>'
+             '<path d="M40 19c0-4 3-4 3-8M56 17c0-4 3-4 3-8" stroke="#B9D6CF" stroke-width="2" stroke-linecap="round" fill="none"/>'
+             '<circle cx="12" cy="44" r="6" fill="#F5B023"/><circle cx="84" cy="44" r="6" fill="#F5B023"/>'
+             '<circle cx="22" cy="60" r="6" fill="#F5B023"/><circle cx="74" cy="60" r="6" fill="none" stroke="#F5B023" stroke-width="2.5"/>',
+    # a tea stall with a striped awning: hosting your own adda
+    "stall": '<rect x="18" y="30" width="60" height="36" rx="3" fill="#0F766E"/><rect x="26" y="40" width="18" height="16" rx="2" fill="#FCEBC1"/>'
+             '<rect x="52" y="40" width="18" height="26" rx="2" fill="#115E59"/>'
+             '<path d="M12 18h72l-4 14H16z" fill="#FFF6E5"/>'
+             '<path d="M12 18h12l-1 14h-7zM36 18h12v14H36zM60 18h12l1 14h-12z" fill="#D9482B"/>'
+             '<path d="M16 32q3 5 7 0q3 5 7 0q3 5 7 0q3 5 7 0q3 5 7 0q3 5 7 0q3 5 7 0q3 5 7 0q3 5 6 0" fill="#D9482B"/>'
+             '<rect x="10" y="12" width="76" height="7" rx="3" fill="#F5B023"/>',
+    # a shield with a tick: safe by design
+    "shield": '<path d="M48 6l26 9v18c0 16-11 28-26 34C33 61 22 49 22 33V15z" fill="#0F766E"/>'
+              '<path d="M48 13l19 7v13c0 12-8 21-19 26-11-5-19-14-19-26V20z" fill="none" stroke="#F5B023" stroke-width="3"/>'
+              '<path d="M38 36l7 7 14-15" stroke="#FFF6E5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+    # a phone saying অ and A: made for Bengal, in two languages
+    "phone": '<rect x="30" y="4" width="36" height="64" rx="8" fill="#13201E"/><rect x="34" y="11" width="28" height="50" rx="4" fill="#FFF6E5"/>'
+             '<text x="48" y="31" font-size="16" font-weight="700" fill="#0F766E" font-family="Anek Bangla, sans-serif" text-anchor="middle">অ</text>'
+             '<text x="48" y="49" font-size="14" font-weight="700" fill="#D9482B" font-family="Anek Bangla, sans-serif" text-anchor="middle">A</text>'
+             '<rect x="41" y="53" width="14" height="3" rx="1.5" fill="#F5B023"/>',
+}
+
+# The closing band's line drawing: Victoria Memorial and Howrah Bridge (marigold, 320 x 90).
+SKYLINE = ('<svg class="skyline" viewBox="0 0 320 90" aria-hidden="true">'
+           '<path d="M2 86h316"/>'
+           # Victoria Memorial: wings, a central dome with its lantern and angel, two corner cupolas
+           '<path d="M8 86V64h104v22M8 64h104M20 64V56h80v8M44 56c0-18 32-18 32 0M60 38v-8M57 30h6M60 30l3-5"/>'
+           '<path d="M16 64v-6c0-5 8-5 8 0v6M96 64v-6c0-5 8-5 8 0v6M28 86V72M40 86V72M52 86V72M68 86V72M80 86V72M92 86V72"/>'
+           # Howrah Bridge: two towers, the cantilever arms and the deck
+           '<path d="M168 86V30M178 86V30M262 86V30M272 86V30M168 30h10M262 30h10"/>'
+           '<path d="M130 70h182M130 70l38-40M178 30l42 24 42-24M312 70l-40-40M178 46l84 0M150 70l18-18M290 70l-18-18"/>'
+           '<path d="M188 36v34M200 43v27M212 50v20M228 50v20M240 43v27M252 36v34"/>'
+           '</svg>')
+
+
+def home_hero():
+    """The hero: our friends photo on the right, fading into dusk on the left where the words are,
+    and a soft wave into the cream page below. The Bengali line is in the same brush script on both
+    language versions; the lede says it in English for English readers."""
+    photo = HERO_PHOTO if (ROOT / HERO_PHOTO).exists() else HERO_PHOTO_FALLBACK
+    trust = [("badge", "Photo-verified members", "ছবি-যাচাই করা সদস্য"), ("adult", "18+ only", "শুধু ১৮+"),
+             ("star", "Free, no ads", "বিনামূল্যে, বিজ্ঞাপন নেই")]
+    trust_html = "".join(f"<li>{icon(i)}{both(en, bn)}</li>" for i, en, bn in trust)
+    return f"""<section class="hero-m">
+  <div class="hero-m-photo"><img src="{asset(photo)}" alt="" width="1600" height="900" fetchpriority="high"></div>
+  <div class="hero-m-text">
+    {SPARK}
+    <h1>{both("Bengali Adda", "বাঙালি আড্ডা")}</h1>
+    <p class="hero-m-script" lang="bn">মন মিললে, বন্ধু মেলে।{SWOOSH}</p>
+    <p class="lede">{both(
+        "Find friends nearby who love what you love. Join small addas, host your own, and be part of Bengal's friendliest community.",
+        "কাছেপিঠে মনের মতো বন্ধু খুঁজুন। ছোট আড্ডায় যোগ দিন, নিজেই আড্ডা বসান, আর হয়ে উঠুন বাংলার সবচেয়ে বন্ধুত্বপূর্ণ দলের অংশ।")}</p>
+    <div class="actions">{get_app_button("btn btn-primary btn-big")}</div>
+    <ul class="hero-m-trust">{trust_html}</ul>
+  </div>
+  <svg class="hero-m-wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0 46C260 96 560 6 900 40c220 22 380 26 540-6v56H0z"/></svg>
+</section>"""
+
+
+def home_gives():
+    """Five cards right under the hero: what the app gives you, each with a small drawing."""
+    cards = [
+        ("people", "lilac", "Find your people", "নিজের মানুষ খুঁজুন",
+         "New picks every morning, with a match % and why you click.",
+         "প্রতিদিন সকালে নতুন মানুষ, সঙ্গে মিলের % আর কেন মিল।"),
+        ("table", "haldi", "Join an Adda Table", "আড্ডা টেবিলে যোগ দিন",
+         "Small meetups of 3 to 6 at a cafe, a park or a phuchka stall.",
+         "ক্যাফে, পার্ক বা ফুচকার দোকানে ৩ থেকে ৬ জনের ছোট আড্ডা।"),
+        ("stall", "peach", "Host your own adda", "নিজেই আড্ডা বসান",
+         "Pick the topic, place and seats, and you choose who joins.",
+         "বিষয়, জায়গা আর আসন ঠিক করুন, কে আসবেন তাও আপনি ঠিক করেন।"),
+        ("shield", "mint", "Safe by design", "শুরু থেকেই নিরাপদ",
+         "Photo-verified members, private meeting spots and two-tap reporting.",
+         "ছবি-যাচাই করা সদস্য, গোপন দেখার জায়গা আর দু-ট্যাপে রিপোর্ট।"),
+        ("phone", "rose", "Made for Bengal", "বাংলার জন্য তৈরি",
+         "In Bengali and English, from Kolkata to Cooch Behar.",
+         "বাংলা আর ইংরেজিতে, কলকাতা থেকে কোচবিহার।"),
+    ]
+    lis = "".join(
+        f'<li class="gv-{tint}"><svg class="gv-art" viewBox="0 0 96 72" aria-hidden="true">{GIVES_ART[art]}</svg>'
+        f"<h3>{both(t_en, t_bn)}</h3><p>{both(d_en, d_bn)}</p></li>"
+        for art, tint, t_en, t_bn, d_en, d_bn in cards)
+    return f"""<section class="gives" aria-labelledby="gives-h">
+    <div class="gives-head">
+      <h2 id="gives-h">{SPARK}<span>{both("What Bengali Adda gives you", "বাঙালি আড্ডা আপনাকে যা দেয়")}</span>{SPARK}</h2>
+      <p>{both("A whole city of addas, in your pocket.", "গোটা শহরের আড্ডা, আপনার পকেটে।")}</p>
+    </div>
+    <ul class="gives-row">{lis}</ul>
+  </section>"""
+
+
+def home_ready():
+    """The closing band before the footer: skyline drawing, one line, the app button."""
+    return f"""<section class="ready" aria-labelledby="ready-h">
+    <div class="ready-inner">
+      {SKYLINE}
+      <div class="ready-text">
+        <h2 id="ready-h">{both("Ready to be part of Bengali Adda?", "বাঙালি আড্ডার অংশ হতে তৈরি?")}</h2>
+        <p>{both("Download the app and find your adda.", "অ্যাপটা নিন, আর খুঁজে নিন আপনার আড্ডা।")}</p>
+      </div>
+      {get_app_button("btn btn-primary btn-big")}
+    </div>
+  </section>"""
+
+
+def with_home_brand(html):
+    """The home page under HOME_BRAND's name (both languages); other pages keep Bengali Adda."""
+    if not HOME_BRAND:
+        return html
+    return html.replace("Bengali Adda", HOME_BRAND[0]).replace("বাঙালি আড্ডা", HOME_BRAND[1])
+
+
 def home():
     # How it works: four app screens in a row (a swipeable row on phones), then one line about chatting.
     steps = [
@@ -564,31 +702,11 @@ def home():
     html = f"""{head(HOME_TITLE_EN, HOME_TITLE_BN, HOME_DESCRIPTION, "", script("story.js") + script("motion.js") + script("match.js") + home_schema(faq))}
 <body class="home">
 {header(on_home=True)}
-<section class="hero-k">
-  {festoon()}
-  <div class="hero-k-text">
-    <h1 lang="bn">মন মিললে, <br>বন্ধু মেলে।</h1>   <!-- in Bengali on both language versions; the line below explains it -->
-    <p class="lede">{both(
-        "New city, but no one to share a cup of cha with? Bengali Adda finds friends nearby who love what you love.",
-        "নতুন শহর, কিন্তু চায়ের সঙ্গী নেই? বাঙালি আড্ডা খুঁজে দেয় কাছেপিঠে মনের মতো বন্ধু।")}</p>
-  </div>
-  <div class="hero-k-art">
-    {hero_art(asset("img/hero-ghat.webp"))}
-    <!-- Two small cards in the app's own style, floating on the picture (decorative) -->
-    <div class="float-card match-card" aria-hidden="true">
-      <div class="mc-top">
-        <svg class="mc-ring" viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="26"/><circle class="fill" cx="32" cy="32" r="26" pathLength="100"/><text x="32" y="37" class="mc-pct">86%</text></svg>
-        <div><p class="mc-who">{both("You and Riti", "আপনি আর রীতি")}</p><p class="mc-why">{both("Where your minds meet", "মনের মিল")}</p></div>
-      </div>
-      <ul class="mc-chips"><li>{both("Prinsep Ghat", "প্রিন্সেপ ঘাট")}</li><li>{both("Durga Puja", "দুর্গাপুজো")}</li><li>{both("Mishti doi", "মিষ্টি দই")}</li><li>{both("Feluda", "ফেলুদা")}</li></ul>
-    </div>
-    <div class="float-card seat-card" aria-hidden="true">
-      <b>☕</b><span>{both("Phuchka adda, Gariahat: <em>2 seats left</em>", "গড়িয়াহাটে ফুচকা আড্ডা: <em>২টো জায়গা খালি</em>")}</span>
-    </div>
-  </div>
-</section>
+{home_hero()}
 
 <main class="home-main">
+  {home_gives()}
+
   {story_section()}
 
   <section class="how" aria-labelledby="how">
@@ -646,12 +764,14 @@ def home():
     <div class="ask-chat">{faq_html}</div>
     <p class="ask-more">{both("Can't find your answer?", "উত্তর পেলেন না?")} <a href="mailto:{EMAIL}">{EMAIL}</a></p>
   </section>
+
+  {home_ready()}
 </main>
 {footer(on_home=True)}
 </body>
 </html>
 """
-    (ROOT / "index.html").write_text(html, encoding="utf-8")
+    (ROOT / "index.html").write_text(with_home_brand(html), encoding="utf-8")
 
 
 # ------------------------------------------------------------ app download

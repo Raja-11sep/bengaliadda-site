@@ -39,6 +39,18 @@
   unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+200C-200D, U+20B9, U+25CC;
 }
 
+/* Galada: a Bengali brush script, only for the hero's মন মিললে, বন্ধু মেলে। line. */
+@font-face {
+  font-family: "Galada"; font-style: normal; font-display: swap; font-weight: 400;
+  src: url("fonts/galada-bengali.woff2") format("woff2");
+  unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+200C-200D, U+20B9, U+25CC;
+}
+@font-face {
+  font-family: "Galada"; font-style: normal; font-display: swap; font-weight: 400;
+  src: url("fonts/galada-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212;
+}
+
 /* ---------------------------------------------------------------- base */
 :root {
   --dusk: #0B3B37;          /* evening sky: hero, header, footer, closing panel */
@@ -984,3 +996,73 @@ html[data-lang="bn"] .play-steps li::before { content: counter(ps, bengali); }
 /* Four items read best as 2 x 2 rather than 3 + 1 */
 .perks ul:has(> li:nth-child(4):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 900px; }
 @media (max-width: 700px) { .perks ul:has(> li:nth-child(4):last-child) { grid-template-columns: 1fr; } }
+
+/* ---------------------------------------------------------------- home page (Nov 2026 redesign)
+   Hero: our friends photo on the right fading into dusk on the left, a brush-script Bengali line,
+   a wave into the cream page. Then five feature cards with small drawings, and a closing band. */
+.spark { width: 34px; height: 34px; fill: none; stroke: var(--marigold); stroke-width: 3.2; stroke-linecap: round; flex: none; }
+.home .hero-m {
+  position: relative; overflow: hidden; display: flex; align-items: center;
+  min-height: min(94vh, 760px); padding: clamp(120px, 12vw, 160px) var(--gutter) clamp(120px, 11vw, 160px);
+  background: var(--dusk); color: var(--on-dusk);
+}
+.hero-m-photo { position: absolute; inset: 0 0 0 30%; }
+.hero-m-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 60%; }
+.hero-m::before {   /* dusk over the photo's left edge, so the words always read */
+  content: ""; position: absolute; inset: 0; z-index: 1;
+  background:
+    linear-gradient(90deg, var(--dusk-deep) 0%, var(--dusk) 30%, rgba(11, 59, 55, .82) 44%, rgba(11, 59, 55, 0) 72%),
+    linear-gradient(180deg, rgba(7, 43, 40, .55) 0%, rgba(7, 43, 40, 0) 26%);
+}
+.hero-m-text { position: relative; z-index: 2; max-width: 600px; }
+.hero-m-text > .spark { position: absolute; left: -38px; top: -26px; transform: rotate(-30deg); }
+.hero-m h1 { margin: 0; font-size: clamp(56px, 7.4vw, 104px); line-height: 1; color: var(--on-dusk); }
+.hero-m-script {
+  position: relative; display: inline-block; margin: 6px 0 22px; padding-bottom: 12px;
+  font: 400 clamp(36px, 4.6vw, 62px)/1.35 "Galada", var(--display); color: var(--marigold);
+}
+.swoosh { position: absolute; left: 4%; right: 0; bottom: 0; width: 96%; height: 16px; fill: none; stroke: var(--marigold); stroke-width: 4; stroke-linecap: round; }
+.hero-m .lede { margin: 0 0 30px; max-width: 30em; font-size: clamp(18px, 1.5vw, 21px); color: var(--on-dusk); opacity: .9; text-wrap: pretty; }
+.hero-m-trust { list-style: none; display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 26px 0 0; padding: 0; font-size: 15px; color: var(--on-dusk-muted); }
+.hero-m-trust li { display: flex; align-items: center; gap: 8px; }
+.hero-m-trust .icon { width: 28px; height: 28px; padding: 6px; background: rgba(245, 176, 35, .14); stroke: var(--marigold); box-shadow: none; }
+.hero-m-trust .icon text { fill: var(--marigold); }
+.hero-m-wave { position: absolute; z-index: 2; left: 0; right: 0; bottom: -1px; width: 100%; height: clamp(40px, 6vw, 90px); fill: var(--paper); }
+@media (max-width: 860px) {   /* phones: the photo on top, the words under it on dusk */
+  .home .hero-m { display: block; min-height: 0; padding: 0 0 70px; }
+  .hero-m-photo { position: relative; inset: auto; height: min(78vw, 420px); }
+  .hero-m::before { background: linear-gradient(180deg, rgba(7, 43, 40, .6) 0%, rgba(7, 43, 40, 0) 22%, rgba(11, 59, 55, 0) 50%, var(--dusk) min(78vw, 420px)); }
+  .hero-m-text { margin-top: -64px; padding: 0 var(--gutter); }
+  .hero-m-text > .spark { left: auto; right: 24px; top: -8px; transform: rotate(20deg); }
+}
+/* What it gives you: five cards in soft colours, each with a drawing */
+.home .gives { padding-top: clamp(40px, 6vw, 72px); }
+.gives-head { text-align: center; margin-bottom: clamp(28px, 4vw, 44px); }
+.home .gives h2 { display: inline-flex; align-items: center; gap: 14px; margin: 0 0 8px; }
+.gives h2 .spark:last-child { transform: scaleX(-1); }
+.gives-head p { margin: 0; font-size: 19px; color: var(--teal-deep); }
+.gives-row { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.gives-row li { padding: 24px 18px 26px; border-radius: 24px; text-align: center; }
+.gives-row h3 { margin: 12px 0 6px; font: 700 20px/1.25 var(--display); color: var(--ink); }
+.gives-row p { margin: 0; color: var(--muted); font-size: 16px; }
+.gv-art { width: 100%; max-width: 120px; height: auto; }
+.gv-lilac { background: #F1EBF7; } .gv-haldi { background: var(--haldi); } .gv-peach { background: #FDE7D8; }
+.gv-mint { background: var(--mint); } .gv-rose { background: #FBE6EA; }
+@media (max-width: 560px) {
+  .gives-row { grid-template-columns: 1fr 1fr; }
+  .gives-row li:last-child { grid-column: span 2; }
+  .home .gives h2 { gap: 8px; } .gives h2 .spark { width: 24px; height: 24px; }
+}
+/* Closing band: skyline, one line, the app button */
+.home .ready { padding-top: 0; }
+.ready-inner {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 32px;
+  padding: 26px 40px 26px 28px; border-radius: 28px; color: var(--on-dusk);
+  background: linear-gradient(180deg, var(--dusk), var(--dusk-deep));
+}
+.skyline { width: clamp(220px, 26vw, 330px); height: auto; fill: none; stroke: var(--marigold); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.home .ready h2 { margin: 0 0 4px; font-size: clamp(26px, 2.6vw, 34px); color: var(--on-dusk); }
+.ready-text p { margin: 0; color: var(--on-dusk-muted); }
+@media (max-width: 860px) {
+  .ready-inner { grid-template-columns: 1fr; text-align: center; justify-items: center; gap: 18px; padding: 30px 22px; }
+}
