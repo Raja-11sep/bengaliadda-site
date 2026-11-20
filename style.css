@@ -1066,3 +1066,41 @@ html[data-lang="bn"] .play-steps li::before { content: counter(ps, bengali); }
 @media (max-width: 860px) {
   .ready-inner { grid-template-columns: 1fr; text-align: center; justify-items: center; gap: 18px; padding: 30px 22px; }
 }
+/* Poster hero: the picture keeps its own shape (1672 x 941); chips and words are placed in % of it and
+   sized in cqw (1% of the picture's width), so everything stays where the artwork's dashed lines lead. */
+.home .hero-p { position: relative; padding: 0; background: var(--dusk); }
+.hero-p-frame { position: relative; container-type: inline-size; }
+.hero-p-frame img { display: block; width: 100%; height: auto; }
+.hero-p-frame::before {   /* a little shade at the top for the floating header, and the dark corner for the words */
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(42% 46% at 92% 74%, rgba(7, 30, 34, .78), rgba(7, 30, 34, 0) 100%),
+    linear-gradient(180deg, rgba(7, 43, 40, .5) 0%, rgba(7, 43, 40, 0) 14%);
+}
+.hero-p-chips { list-style: none; margin: 0; padding: 0; }
+.hero-p-chips li {
+  position: absolute; z-index: 2; display: flex; align-items: center; gap: 1cqw; padding: 0 1.1cqw;
+  border-radius: 1.5cqw; background: #FFFCF6; color: var(--ink); box-shadow: 0 .8cqw 2cqw -1cqw rgba(0, 0, 0, .45);
+  font: 600 clamp(12px, 1.25cqw, 19px)/1.25 var(--display);
+}
+.hero-p-chips .icon { width: 3cqw; height: 3cqw; padding: .65cqw; background: var(--mint); box-shadow: none; }
+.hero-p-brand { position: absolute; z-index: 2; right: 2.4cqw; top: 52%; width: 26.5cqw; color: var(--on-dusk); }
+.hero-p-name { display: flex; align-items: center; gap: 1cqw; margin: 0; font: 700 4cqw/1 var(--display); letter-spacing: -.02em; }
+.hero-p-name svg { width: 5.2cqw; height: 5.2cqw; flex: none; }
+.hero-p-script {
+  position: relative; display: inline-block; margin: 1cqw 0 0; padding-bottom: .8cqw;
+  font: 400 2.9cqw/1.35 "Galada", var(--display); color: var(--marigold); letter-spacing: 0;
+}
+.hero-p-script .swoosh { height: 1cqw; }
+.hero-p-line { margin: .8cqw 0 1.6cqw; font-size: clamp(15px, 1.45cqw, 22px); line-height: 1.45; color: var(--on-dusk); }
+.hero-p .hero-m-wave { z-index: 3; }
+@media (max-width: 760px) {   /* phones: closer crop, no chips, words under the picture on dusk */
+  .hero-p-chips { display: none; }
+  .hero-p-frame::before { background: linear-gradient(180deg, rgba(7, 43, 40, .55) 0%, rgba(7, 43, 40, 0) 22%, rgba(11, 59, 55, 0) 70%, var(--dusk) 100%); }
+  .hero-p-brand { position: relative; right: auto; top: auto; width: auto; margin-top: -40px; padding: 0 var(--gutter) 84px; }
+  .hero-p-name { gap: 12px; font-size: 44px; }
+  .hero-p-name svg { width: 48px; height: 48px; }
+  .hero-p-script { margin-top: 10px; padding-bottom: 8px; font-size: 34px; }
+  .hero-p-script .swoosh { height: 12px; }
+  .hero-p-line { margin: 10px 0 22px; font-size: 18px; }
+}

@@ -47,6 +47,9 @@ HOME_BRAND = ("Mon Mela", "মনমেলা")
 # The hero's photo (wide, friends, no text on it). Until our own arrives: story photo 6, the ghat at sunset.
 HERO_PHOTO = "img/hero-friends.webp"
 HERO_PHOTO_FALLBACK = "img/story-6.webp"
+# HERO_STYLE "poster": the friends-on-the-ghat poster (img/hero-poster.webp; its old logo and words removed)
+# with our own chips, logo and words laid over it. "photo": the photo on the right, words on the left.
+HERO_STYLE = "poster"
 
 # The "Join us" pages (join, ambassador, partners, creators, host) all send people to ONE Google Form,
 # so every application lands in one sheet. The form's first question is "How would you like to be
@@ -575,6 +578,39 @@ def home_hero():
 </section>"""
 
 
+def home_hero_poster():
+    """The poster hero: one wide photo of friends round a phone at the ghat. Four chips sit where the
+    photo's dashed lines lead (the same spots as in the original artwork, in % of the picture), and the
+    logo, name and line sit on the dark corner at the bottom right. Phones get a closer crop of the
+    friends, no chips, and the words under the picture."""
+    chips = [  # icon, English, Bengali, left %, top %, width %, height %
+        ("people", "Find your people", "নিজের মানুষ খুঁজুন", 19.9, 17.6, 14.6, 10.1),
+        ("cup", "Join an Adda Table", "আড্ডা টেবিলে যোগ দিন", 44.3, 11.4, 15.5, 9.5),
+        ("star", "Host your own adda", "নিজেই আড্ডা বসান", 74.8, 23.6, 16.1, 9.8),
+        ("badge", "Photo-verified members", "ছবি-যাচাই করা সদস্য", 4.8, 39.0, 16.7, 10.9),
+    ]
+    chips_html = "".join(
+        f'<li style="left:{l}%;top:{t}%;width:{w}%;height:{h}%">{icon(i)}<span>{both(en, bn)}</span></li>'
+        for i, en, bn, l, t, w, h in chips)
+    return f"""<section class="hero-p">
+  <div class="hero-p-frame">
+    <picture>
+      <source media="(max-width: 760px)" srcset="{asset("img/hero-poster-m.webp")}" width="890" height="691">
+      <img src="{asset("img/hero-poster.webp")}" alt="Five friends laughing round a phone on the ghat steps at dusk, Howrah Bridge behind them"
+           width="1672" height="941" fetchpriority="high">
+    </picture>
+    <ul class="hero-p-chips" aria-hidden="true">{chips_html}</ul>
+    <div class="hero-p-brand">
+      <p class="hero-p-name">{LOGO}<span>{both("Bengali Adda", "বাঙালি আড্ডা")}</span></p>
+      <h1 class="hero-p-script" lang="bn">মন মিললে, বন্ধু মেলে।{SWOOSH}</h1>
+      <p class="hero-p-line">{both("A city of addas, and people like you.", "আড্ডার শহর, আর আপনার মতো মানুষ।")}</p>
+      <div class="actions">{get_app_button("btn btn-primary")}</div>
+    </div>
+  </div>
+  <svg class="hero-m-wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0 46C260 96 560 6 900 40c220 22 380 26 540-6v56H0z"/></svg>
+</section>"""
+
+
 def home_gives():
     """Five cards right under the hero: what the app gives you, each with a small drawing."""
     cards = [
@@ -702,7 +738,7 @@ def home():
     html = f"""{head(HOME_TITLE_EN, HOME_TITLE_BN, HOME_DESCRIPTION, "", script("story.js") + script("motion.js") + script("match.js") + home_schema(faq))}
 <body class="home">
 {header(on_home=True)}
-{home_hero()}
+{home_hero_poster() if HERO_STYLE == "poster" else home_hero()}
 
 <main class="home-main">
   {home_gives()}
