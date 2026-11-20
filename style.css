@@ -1074,7 +1074,7 @@ html[data-lang="bn"] .play-steps li::before { content: counter(ps, bengali); }
 .hero-p-frame::before {   /* a little shade at the top for the floating header, and the dark corner for the words */
   content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background:
-    radial-gradient(42% 46% at 92% 74%, rgba(7, 30, 34, .78), rgba(7, 30, 34, 0) 100%),
+    radial-gradient(30% 34% at 90% 72%, rgba(7, 30, 34, .35), rgba(7, 30, 34, 0) 100%),
     linear-gradient(180deg, rgba(7, 43, 40, .5) 0%, rgba(7, 43, 40, 0) 14%);
 }
 .hero-p-chips { list-style: none; margin: 0; padding: 0; }
@@ -1084,7 +1084,7 @@ html[data-lang="bn"] .play-steps li::before { content: counter(ps, bengali); }
   font: 600 clamp(12px, 1.25cqw, 19px)/1.25 var(--display);
 }
 .hero-p-chips .icon { width: 3cqw; height: 3cqw; padding: .65cqw; background: var(--mint); box-shadow: none; }
-.hero-p-brand { position: absolute; z-index: 2; right: 2.4cqw; top: 52%; width: 26.5cqw; color: var(--on-dusk); }
+.hero-p-brand { position: absolute; z-index: 2; right: 6cqw; bottom: 16%; color: var(--on-dusk); }
 .hero-p-name { display: flex; align-items: center; gap: 1cqw; margin: 0; font: 700 4cqw/1 var(--display); letter-spacing: -.02em; }
 .hero-p-name svg { width: 5.2cqw; height: 5.2cqw; flex: none; }
 .hero-p-script {
@@ -1097,10 +1097,12 @@ html[data-lang="bn"] .play-steps li::before { content: counter(ps, bengali); }
 @media (max-width: 760px) {   /* phones: closer crop, no chips, words under the picture on dusk */
   .hero-p-chips { display: none; }
   .hero-p-frame::before { background: linear-gradient(180deg, rgba(7, 43, 40, .55) 0%, rgba(7, 43, 40, 0) 22%, rgba(11, 59, 55, 0) 70%, var(--dusk) 100%); }
-  .hero-p-brand { position: relative; right: auto; top: auto; width: auto; margin-top: -40px; padding: 0 var(--gutter) 84px; }
+  .hero-p-brand { position: relative; right: auto; bottom: auto; margin-top: -36px; padding: 0 var(--gutter) 76px; }
   .hero-p-name { gap: 12px; font-size: 44px; }
   .hero-p-name svg { width: 48px; height: 48px; }
   .hero-p-script { margin-top: 10px; padding-bottom: 8px; font-size: 34px; }
   .hero-p-script .swoosh { height: 12px; }
   .hero-p-line { margin: 10px 0 22px; font-size: 18px; }
 }
+/* Visible only to screen readers and search engines */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

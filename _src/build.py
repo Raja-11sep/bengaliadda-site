@@ -580,9 +580,8 @@ def home_hero():
 
 def home_hero_poster():
     """The poster hero: one wide photo of friends round a phone at the ghat. Four chips sit where the
-    photo's dashed lines lead (the same spots as in the original artwork, in % of the picture), and the
-    logo, name and line sit on the dark corner at the bottom right. Phones get a closer crop of the
-    friends, no chips, and the words under the picture."""
+    photo's dashed lines lead (the same spots as in the original artwork, in % of the picture). Phones get a closer crop of the
+    friends and no chips."""
     chips = [  # icon, English, Bengali, left %, top %, width %, height %
         ("people", "Find your people", "নিজের মানুষ খুঁজুন", 19.9, 17.6, 14.6, 10.1),
         ("cup", "Join an Adda Table", "আড্ডা টেবিলে যোগ দিন", 44.3, 11.4, 15.5, 9.5),
@@ -600,12 +599,9 @@ def home_hero_poster():
            width="1672" height="941" fetchpriority="high">
     </picture>
     <ul class="hero-p-chips" aria-hidden="true">{chips_html}</ul>
-    <div class="hero-p-brand">
-      <p class="hero-p-name">{LOGO}<span>{both("Bengali Adda", "বাঙালি আড্ডা")}</span></p>
-      <h1 class="hero-p-script" lang="bn">মন মিললে, বন্ধু মেলে।{SWOOSH}</h1>
-      <p class="hero-p-line">{both("A city of addas, and people like you.", "আড্ডার শহর, আর আপনার মতো মানুষ।")}</p>
-      <div class="actions">{get_app_button("btn btn-primary")}</div>
-    </div>
+    <!-- The picture speaks for itself (the header has the app button). The heading is for screen
+         readers and search engines. -->
+    <h1 class="sr-only">{both("Bengali Adda: friends and adda meetups in West Bengal", "বাঙালি আড্ডা: পশ্চিমবঙ্গে বন্ধু আর আড্ডা")}</h1>
   </div>
   <svg class="hero-m-wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0 46C260 96 560 6 900 40c220 22 380 26 540-6v56H0z"/></svg>
 </section>"""
