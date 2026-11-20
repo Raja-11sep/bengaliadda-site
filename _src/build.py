@@ -608,29 +608,26 @@ def home_hero_poster():
 
 
 def home_hero_light():
-    """The bright home page hero: friends round a phone by the river at sunset, Howrah Bridge behind.
-    The picture (img/home-hero.webp, made by tools/make_home_hero.py from the mockup) keeps its five round
-    icons; their names, the big Mon Mela and its line are real text laid over it, placed in % of the
-    picture and sized in cqw so they stay in place at every width. Phones: a closer crop of the
-    friends, then the icons in a row and the words under it."""
-    icons = [  # file number, x centre in % of the picture, English, Bengali
-        (1, 39.0, "Find your<br>people", "নিজের<br>মানুষ খুঁজুন"),
-        (2, 48.7, "Join<br>addas", "আড্ডায়<br>যোগ দিন"),
-        (3, 57.8, "Explore<br>your city", "নিজের শহর<br>ঘুরে দেখুন"),
-        (4, 66.75, "Safe and<br>trusted", "নিরাপদ আর<br>ভরসার"),
-        (5, 76.6, "Feel at<br>home", "আপন<br>মনে হবে"),
+    """The bright home page hero: the raw riverside photo (img/home-hero.webp, made by
+    tools/make_home_photo.py), the big name and its line over a soft haze on the left, then the five
+    round icons as a real HTML row under the picture, so they wrap to fit any screen."""
+    # (icon file number, English, Bengali)
+    icons = [
+        (1, "Find your<br>people", "নিজের<br>মানুষ খুঁজুন"),
+        (2, "Join<br>addas", "আড্ডায়<br>যোগ দিন"),
+        (3, "Explore<br>your city", "নিজের শহর<br>ঘুরে দেখুন"),
+        (4, "Safe and<br>trusted", "নিরাপদ আর<br>ভরসার"),
+        (5, "Feel at<br>home", "আপন<br>মনে হবে"),
     ]
-    labels = "".join(f'<li style="left:{x}%">{both(en, bn)}</li>' for _, x, en, bn in icons)
     row = "".join(f'<li><img src="{asset(f"img/home-icon-{n}.png")}" alt="" width="74" height="74"><span>{both(en, bn)}</span></li>'
-                  for n, _, en, bn in icons)
+                  for n, en, bn in icons)
     return f"""<section class="hero-l">
   <div class="hero-l-frame">
     <picture>
-      <source media="(max-width: 760px)" srcset="{asset("img/home-hero-m.webp")}" width="1242" height="430">
+      <source media="(max-width: 760px)" srcset="{asset("img/home-hero-m.webp")}" width="1080" height="647">
       <img src="{asset("img/home-hero.webp")}" alt="Five friends laughing round a phone on the grass by the river at sunset, Howrah Bridge behind them"
-           width="1672" height="660" fetchpriority="high">
+           width="1884" height="835" fetchpriority="high">
     </picture>
-    <ul class="hero-l-labels" aria-hidden="true">{labels}</ul>
     <div class="hero-l-text">
       <h1>{both("Bengali Adda", "বাঙালি আড্ডা")}</h1>
       <p>{both("Find your people, join addas, and be a part of Bengal's friendliest community.",

@@ -107,7 +107,6 @@ w = cv2.GaussianBlur((big | (words & rect((0, 0, 640, 520)))).astype(np.float32)
 w = np.clip(w * 2.2, 0, 1)[..., None]
 hero = np.clip(haze * w + hero.astype(np.float32) * (1 - w), 0, 255).astype(np.uint8)
 photo = Image.fromarray(cv2.cvtColor(hero, cv2.COLOR_BGR2RGB))
-photo.save(IMG / "home-hero.webp", "WEBP", quality=84, method=6)
-photo.crop((430, 230, 1672, 660)).save(IMG / "home-hero-m.webp", "WEBP", quality=84, method=6)
+# The hero pictures now come from the raw photo: see make_home_photo.py.
 photo.save("/tmp/home-hero-check.png")
 print("done")
