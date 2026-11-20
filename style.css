@@ -1071,10 +1071,9 @@ html[data-lang="bn"] .play-steps li::before { content: counter(ps, bengali); }
 .home .hero-p { position: relative; padding: 0; background: var(--dusk); }
 .hero-p-frame { position: relative; container-type: inline-size; }
 .hero-p-frame img { display: block; width: 100%; height: auto; }
-.hero-p-frame::before {   /* a little shade at the top for the floating header, and the dark corner for the words */
+.hero-p-frame::before {   /* a little shade at the top for the floating header */
   content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background:
-    radial-gradient(30% 34% at 90% 72%, rgba(7, 30, 34, .35), rgba(7, 30, 34, 0) 100%),
     linear-gradient(180deg, rgba(7, 43, 40, .5) 0%, rgba(7, 43, 40, 0) 14%);
 }
 .hero-p-chips { list-style: none; margin: 0; padding: 0; }
