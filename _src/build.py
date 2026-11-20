@@ -41,10 +41,22 @@ TEST_JOIN_URL = "https://play.google.com/apps/testing/com.monmela.app"
 APP_ID = "com.monmela.app"
 APP_SHA256 = []
 
-# Campus ambassador and partner pages (ambassador.html, partners.html): their main buttons open
-# these Google Forms. Empty = the button opens an e-mail to us instead, with the questions in it.
-AMBASSADOR_FORM_URL = ""
-PARTNER_FORM_URL = ""
+# The "Join us" pages (join, ambassador, partners, creators, host) all send people to ONE Google Form,
+# so every application lands in one sheet. The form's first question is "How would you like to be
+# part of Bengali Adda?" with exactly the ROLES labels below as its options.
+# JOIN_FORM_URL: the form's link (…/viewform). JOIN_FORM_ROLE_ENTRY: that question's prefill id, e.g.
+# "entry.1234567890" (Form ⋮ → Get pre-filled link → pick an option → copy link → the entry.… part),
+# so each page's button arrives with its role already picked. Empty URL = the buttons open an e-mail
+# to us instead, with the questions in it.
+JOIN_FORM_URL = ""
+JOIN_FORM_ROLE_ENTRY = ""
+ROLES = {
+    "ambassador": "Campus ambassador",
+    "partner": "Venue or event partner",
+    "creator": "Creator",
+    "host": "Adda host",
+    "launch": "Launch updates",
+}
 
 # Our social pages: linked in the footer and listed in the structured data ("sameAs"),
 # which tells Google these pages belong to the same Bengali Adda.
@@ -129,7 +141,8 @@ def header(on_home=False):
     links = '<nav class="top-nav" aria-label="Sections">' + "".join(
         f'<a href="{prefix}#{anchor}">{both(en, bn)}</a>'
         for anchor, en, bn in [("how", "How it works", "কীভাবে"), ("adda-h", "Adda Tables", "আড্ডা টেবিল"),
-                               ("safe", "Safety", "নিরাপত্তা"), ("qa", "Questions", "প্রশ্ন")]) + "</nav>"
+                               ("safe", "Safety", "নিরাপত্তা"), ("qa", "Questions", "প্রশ্ন")]) + \
+        f'<a href="join.html">{both("Join us", "যুক্ত হোন")}</a></nav>'
     cta = get_app_button("btn btn-primary btn-small top-cta", short=True)
     return f"""<header class="top"><div class="top-inner">
   <a class="brand" href="./">{LOGO}{both("Bengali Adda", "বাঙালি আড্ডা")}</a>
@@ -181,7 +194,7 @@ def footer(on_home=False):
     explore = group("Explore", "ঘুরে দেখুন", [
         (f"{home}#how", "How it works", "কীভাবে কাজ করে"), (f"{home}#adda-h", "Adda Tables", "আড্ডা টেবিল"),
         (f"{home}#safe", "Safety", "নিরাপত্তা"), (f"{home}#qa", "Questions", "প্রশ্ন"),
-        ("ambassador.html", "Campus ambassadors", "ক্যাম্পাস অ্যাম্বাসাডর"), ("partners.html", "Partner with us", "পার্টনার হোন")])
+        ("join.html", "Join us", "যুক্ত হোন")])
     help_ = group("Help", "সাহায্য", [
         ("terms.html", "Terms", "শর্তাবলি"), ("privacy.html", "Privacy", "প্রাইভেসি"),
         ("child-safety.html", "Child safety", "শিশু সুরক্ষা"), ("delete-account.html", "Delete account", "অ্যাকাউন্ট মুছুন")])
@@ -708,7 +721,7 @@ def sitemap():
     """sitemap.xml: every public page with today's date, so Google finds and re-reads them.
     The URLs match each page's canonical link."""
     today = datetime.date.today().isoformat()
-    paths = ["", "download", "ambassador", "partners", "privacy.html", "terms.html", "delete-account.html", "child-safety.html"]
+    paths = ["", "download", "join", "ambassador", "partners", "creators", "host", "privacy.html", "terms.html", "delete-account.html", "child-safety.html"]
     urls = "".join(f"  <url><loc>{SITE}/{p}</loc><lastmod>{today}</lastmod></url>\n" for p in paths)
     (ROOT / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -986,11 +999,24 @@ def assetlinks():
     (folder / "assetlinks.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
-def form_link(url, subject, body):
-    """A Google Form when we have one; until then an e-mail to us with the questions filled in."""
-    if url:
-        return url, ' target="_blank" rel="noopener"'
-    return f"mailto:{EMAIL}?subject={quote(subject)}&body={quote(body)}", ""
+def form_link(role, body):
+    """The join form with this role pre-picked; until the form exists, an e-mail to us with the questions."""
+    label = ROLES[role]
+    if JOIN_FORM_URL:
+        prefill = f"?usp=pp_url&{JOIN_FORM_ROLE_ENTRY}={quote(label)}" if JOIN_FORM_ROLE_ENTRY else ""
+        return JOIN_FORM_URL + prefill, ' target="_blank" rel="noopener"'
+    return f"mailto:{EMAIL}?subject={quote(label + ' - Bengali Adda')}&body={quote(body)}", ""
+
+
+def bullet_list(items):
+    """A plain list of (English, Bengali) lines, marigold markers."""
+    return "<ul>" + "".join(f"<li>{both(en, bn)}</li>" for en, bn in items) + "</ul>"
+
+
+def icon_list(items):
+    """Icon + title + line items (the "What you get" style)."""
+    return "<ul>" + "".join(f"<li>{icon(i)}<div><h3>{both(t_en, t_bn)}</h3><p>{both(d_en, d_bn)}</p></div></li>"
+                            for i, t_en, t_bn, d_en, d_bn in items) + "</ul>"
 
 
 def join_page(file, path, title, description, intro, art, main):
@@ -1030,7 +1056,7 @@ def steps_list(items):
 def ambassador():
     """bengaliadda.in/ambassador: the Founding Ambassador programme for college students (tried here first,
     then moved to monmela.in)."""
-    href, target = form_link(AMBASSADOR_FORM_URL, "Campus ambassador application",
+    href, target = form_link("ambassador",
                              "Name:\nCollege:\nCourse and year:\nAge:\nPhone / WhatsApp:\n"
                              "Clubs or groups you run or are part of:\nThe first adda you'd host on campus:\n"
                              "Android phone (yes/no):\nInstagram (optional):\n")
@@ -1132,7 +1158,7 @@ def ambassador():
 def partners():
     """bengaliadda.in/partners: cafes, sports venues, college fests and communities that host our addas
     (tried here first, then moved to monmela.in)."""
-    href, target = form_link(PARTNER_FORM_URL, "Partnership with Bengali Adda",
+    href, target = form_link("partner",
                              "Name of your place or group:\nType (cafe, restaurant, sports venue, fest, club, community):\n"
                              "Area:\nContact person:\nPhone:\nQuiet days and hours:\nA perk you could offer groups:\n")
     interest = both("I'm interested", "আমি আগ্রহী")
@@ -1211,6 +1237,213 @@ def partners():
               main)
 
 
+def join_hub():
+    """bengaliadda.in/join: every way to be part of Bengali Adda, one card each. Linked from the header
+    and footer ("Join us"). Tried here first, then moved to monmela.in."""
+    href, target = form_link("launch", "Name:\nCity or area:\nPhone or e-mail:\n")
+    roles = [
+        ("adult", "Campus ambassador", "ক্যাম্পাস অ্যাম্বাসাডর",
+         "College students who want to start addas on their campus.",
+         "যে কলেজ পড়ুয়ারা নিজের ক্যাম্পাসে আড্ডা শুরু করতে চান।", "ambassador.html", None),
+        ("cup", "Venue or event partner", "জায়গা বা অনুষ্ঠানের পার্টনার",
+         "Cafes, restaurants, sports venues and college fests that welcome our groups.",
+         "ক্যাফে, রেস্তোরাঁ, খেলার জায়গা আর কলেজ ফেস্ট, যাঁরা আমাদের দলকে স্বাগত জানান।", "partners.html", None),
+        ("star", "Creator", "ক্রিয়েটর",
+         "Bengali creators on Instagram, YouTube and meme pages.",
+         "Instagram, YouTube আর মিম পেজের বাঙালি ক্রিয়েটর।", "creators.html", None),
+        ("people", "Adda host", "আড্ডার হোস্ট",
+         "Club leads, group admins and hobby groups who bring people together.",
+         "ক্লাবের দায়িত্বে থাকা মানুষ, গ্রুপ অ্যাডমিন আর শখের দল, যাঁরা মানুষকে একসঙ্গে আনেন।", "host.html", None),
+        ("spark", "Just tell me at launch", "লঞ্চ হলে জানান",
+         "Not ready to do more? Leave your details and we'll message you when the app opens to everyone.",
+         "এখনই আর কিছু নয়? নিজের তথ্য দিয়ে রাখুন, অ্যাপ সবার জন্য খুললে আমরা জানাব।", href, target),
+    ]
+    cards = "".join(
+        f"""<li><a class="role" href="{link}"{tgt or ""}>{icon(i)}<h3>{both(t_en, t_bn)}</h3>
+      <p>{both(d_en, d_bn)}</p></a></li>"""
+        for i, t_en, t_bn, d_en, d_bn, link, tgt in roles)
+    main = f"""  <section class="roles" aria-labelledby="ways">
+    <h2 id="ways">{both("Choose your way in", "কীভাবে যুক্ত হবেন, বেছে নিন")}</h2>
+    <ul>{cards}</ul>
+    <p class="roles-note">{both(
+        f'Want to help some other way? Write to us at <a href="mailto:{EMAIL}">{EMAIL}</a>.',
+        f'অন্যভাবে সাহায্য করতে চান? লিখুন <a href="mailto:{EMAIL}">{EMAIL}</a>-এ।')}</p>
+  </section>"""
+    join_page("join.html", "join",
+              ("Join Bengali Adda", "বাঙালি আড্ডায় যুক্ত হোন"),
+              "Campus ambassadors, partner venues, creators and adda hosts: the ways to be part of Bengali Adda.",
+              ("Be part of Bengali Adda", "বাঙালি আড্ডার অংশ হোন",
+               "Bengali Adda is being built by the people who use it. Start addas on your campus, welcome groups "
+               "at your cafe, make content with us, or host your club's meetups.",
+               "বাঙালি আড্ডা গড়ে উঠছে এর মানুষদের হাতেই। নিজের ক্যাম্পাসে আড্ডা শুরু করুন, আপনার ক্যাফেতে দলকে "
+               "স্বাগত জানান, আমাদের সঙ্গে কনটেন্ট বানান, বা নিজের ক্লাবের মিটআপ বসান।",
+               f'<a class="btn btn-primary btn-big" href="#ways">{both("See the ways to join", "যুক্ত হওয়ার উপায় দেখুন")}</a>',
+               ("Free to join. Volunteer roles are unpaid.", "যুক্ত হতে টাকা লাগে না। স্বেচ্ছাসেবী ভূমিকাগুলো অবৈতনিক।")),
+              adda_card("back", "Quiz night, Jadavpur", "কুইজ নাইট, যাদবপুর",
+                        "Friday, 7 pm", "শুক্রবার, সন্ধে ৭টা", 5, 6, full=False)
+              + adda_card("front", "Trek planning adda, Gariahat", "ট্রেকের পরিকল্পনা আড্ডা, গড়িয়াহাট",
+                          "Sunday, 11 am", "রবিবার, সকাল ১১টা", 3, 6,
+                          tag=("Founding host", "ফাউন্ডিং হোস্ট")),
+              main)
+
+
+def creators():
+    """bengaliadda.in/creators: Bengali creators join a list now; paid collaborations open after launch."""
+    href, target = form_link("creator",
+                             "Name:\nInstagram / YouTube / page link:\nFollowers:\nAverage views on your last 10 posts:\n"
+                             "Share of your audience in West Bengal (from your insights):\nWhat you make content about:\n"
+                             "Phone or e-mail:\n")
+    apply_btn = f'<a class="btn btn-primary btn-big" href="{href}"{target}>{both("Join the creator list", "ক্রিয়েটর তালিকায় নাম দিন")}</a>'
+    main = f"""  <section class="fit">
+    <div><h2>{both("What we look for", "আমরা যা খুঁজি")}</h2>{bullet_list([
+        ("Most of your audience lives in West Bengal", "আপনার দর্শকদের বেশিরভাগ পশ্চিমবঙ্গের"),
+        ("You make content in Bengali or Benglish", "আপনি বাংলা বা বাংলা-ইংরেজি মিশিয়ে কনটেন্ট বানান"),
+        ("Real views and comments matter more to us than follower count",
+         "ফলোয়ার সংখ্যার চেয়ে আসল ভিউ আর কমেন্ট আমাদের কাছে বেশি দামি"),
+        ("Friendly content that's fine for a general audience", "সবার দেখার মতো, বন্ধুত্বপূর্ণ কনটেন্ট"),
+    ])}</div>
+    <div><h2>{both("Good to know", "জেনে রাখুন")}</h2>{bullet_list([
+        ("Paid work starts after the app's public launch. Before that, nothing is paid.",
+         "টাকার কাজ শুরু হবে অ্যাপ সবার জন্য খোলার পর। তার আগে কোনো পেমেন্ট নেই।"),
+        ("Every fee and date is agreed in writing before you post.", "পোস্টের আগে ফি আর তারিখ লিখিতভাবে ঠিক হয়।"),
+        ("Every paid post is marked as a paid partnership, as Indian advertising rules require.",
+         "ভারতের বিজ্ঞাপনের নিয়ম মেনে প্রতিটা টাকার পোস্টে পেইড পার্টনারশিপ লেখা থাকে।"),
+        ("We never pay for followers, likes or fake engagement.", "ফলোয়ার, লাইক বা ভুয়ো এনগেজমেন্টের জন্য আমরা কখনও টাকা দিই না।"),
+    ])}</div>
+  </section>
+  <section class="perks" aria-labelledby="get">
+    <h2 id="get">{both("What you get", "আপনি যা পাবেন")}</h2>
+    {icon_list([
+        ("award", "Paid collaborations", "টাকার বিনিময়ে কাজ",
+         "After launch, selected creators get a paid brief, usually a reel and stories.",
+         "লঞ্চের পর বাছাই করা ক্রিয়েটররা টাকার বিনিময়ে কাজ পাবেন, সাধারণত একটা রিল আর কয়েকটা স্টোরি।"),
+        ("spark", "Early access", "সবার আগে অ্যাপ",
+         "Try the app before everyone else, and tell us what your audience would love.",
+         "সবার আগে অ্যাপ চালান, আর বলুন আপনার দর্শকদের কী ভালো লাগবে।"),
+        ("cup", "First invites to our addas", "আমাদের আড্ডায় প্রথম আমন্ত্রণ",
+         "Come to our first meetups and events in Kolkata, and film them if you like.",
+         "কলকাতায় আমাদের প্রথম মিটআপ আর অনুষ্ঠানে আসুন, চাইলে ভিডিও করুন।"),
+        ("people", "Work that lasts", "লম্বা সম্পর্ক",
+         "If your audience loves Bengali Adda, we come back to you first.",
+         "আপনার দর্শকদের বাঙালি আড্ডা ভালো লাগলে, পরের বারও আমরা আগে আপনার কাছেই আসব।"),
+    ])}
+  </section>
+  <section class="steps" aria-labelledby="how">
+    <h2 id="how">{both("How it works", "কীভাবে হয়")}</h2>
+    {steps_list([
+        ("Join the list", "তালিকায় নাম দিন",
+         "Send us your page, followers, average views and how much of your audience is in West Bengal.",
+         "আপনার পেজ, ফলোয়ার, গড় ভিউ আর দর্শকদের কতটা পশ্চিমবঙ্গে, তা আমাদের পাঠান।"),
+        ("We look at your posts", "আমরা আপনার পোস্ট দেখি", "We reply within a week.", "এক সপ্তাহের মধ্যে উত্তর দিই।"),
+        ("After launch, a brief", "লঞ্চের পর কাজের বিবরণ",
+         "What to make, the fee and the date, agreed in writing.", "কী বানাবেন, ফি আর তারিখ, লিখিতভাবে ঠিক হয়।"),
+        ("You post", "আপনি পোস্ট করেন", "Marked as a paid partnership, with a link to the app.",
+         "পেইড পার্টনারশিপ লেখা, সঙ্গে অ্যাপের লিংক।"),
+    ])}
+  </section>
+  <section class="cta-band">
+    {festoon()}
+    <h2>{both("Make your audience's next adda", "আপনার দর্শকদের পরের আড্ডা জমান")}</h2>
+    <p>{both("It takes two minutes to join the list.", "তালিকায় নাম দিতে দু'মিনিট লাগে।")}</p>
+    <div class="actions">{apply_btn}</div>
+  </section>"""
+    join_page("creators.html", "creators",
+              ("Creators | Bengali Adda", "ক্রিয়েটর | বাঙালি আড্ডা"),
+              "Bengali creators: join the Bengali Adda creator list now. Paid collaborations open after the public launch.",
+              ("Create with Bengali Adda", "বাঙালি আড্ডার সঙ্গে কনটেন্ট বানান",
+               "We're looking for Bengali creators whose followers love adda, food, books, football and their city. "
+               "Join our creator list now. Paid collaborations open after the public launch.",
+               "আমরা এমন বাঙালি ক্রিয়েটর খুঁজছি যাঁদের দর্শকেরা আড্ডা, খাওয়াদাওয়া, বই, ফুটবল আর নিজের শহর ভালোবাসেন। "
+               "এখনই ক্রিয়েটর তালিকায় নাম দিন। টাকার কাজ শুরু হবে অ্যাপ সবার জন্য খোলার পর।",
+               apply_btn,
+               ("Instagram, YouTube, meme pages and blogs. Every size is welcome.",
+                "Instagram, YouTube, মিম পেজ আর ব্লগ। ছোট-বড় সবাইকে স্বাগত।")),
+              adda_card("back", "Phuchka crawl, Vivekananda Park", "ফুচকা অভিযান, বিবেকানন্দ পার্ক",
+                        "Saturday, 6 pm", "শনিবার, সন্ধে ৬টা", 4, 6, full=False)
+              + adda_card("front", "Creators' adda, College Street", "ক্রিয়েটরদের আড্ডা, কলেজ স্ট্রিট",
+                          "Sunday, 4 pm", "রবিবার, বিকেল ৪টে", 4, 6,
+                          tag=("Creator meetup", "ক্রিয়েটর মিটআপ")),
+              main)
+
+
+def host():
+    """bengaliadda.in/host: club leads, group admins and hobby groups become Founding Hosts of Adda Tables."""
+    href, target = form_link("host",
+                             "Name:\nYour club, group or community (with a link if it has one):\nWhat kind of meetups you run:\n"
+                             "Area:\nHow many people usually come:\nPhone or e-mail:\n")
+    apply_btn = f'<a class="btn btn-primary btn-big" href="{href}"{target}>{both("Become a Founding Host", "ফাউন্ডিং হোস্ট হোন")}</a>'
+    main = f"""  <section class="perks" aria-labelledby="tools">
+    <h2 id="tools">{both("What the app does for you", "অ্যাপ আপনার জন্য যা করে")}</h2>
+    {icon_list([
+        ("people", "You choose who joins", "কে আসবেন, আপনি ঠিক করেন",
+         "People ask for a seat, and you say yes or no. You set the number of seats.",
+         "মানুষ জায়গা চান, আপনি হ্যাঁ বা না বলেন। কতগুলো জায়গা, তাও আপনি ঠিক করেন।"),
+        ("pin", "The exact spot stays private", "ঠিক জায়গা গোপন থাকে",
+         "Only the people you accept see where you're meeting.", "শুধু যাঁদের আপনি নেন, তাঁরাই জানেন কোথায় দেখা হবে।"),
+        ("badge", "Women-only and verified-only tables", "শুধু মহিলাদের আর শুধু যাচাই করা সদস্যদের টেবিল",
+         "Hosts are photo verified, and you can open a table to women only or verified members only.",
+         "হোস্টরা ছবি-যাচাই করা, আর আপনি টেবিল শুধু মহিলাদের বা শুধু যাচাই করা সদস্যদের জন্য খুলতে পারেন।"),
+        ("chat", "A group chat for every adda", "প্রতিটা আড্ডার গ্রুপ চ্যাট",
+         "It opens for the people at your table, without sharing phone numbers.",
+         "টেবিলের মানুষদের জন্য খোলে, কারও ফোন নম্বর না দিয়েই।"),
+    ])}
+  </section>
+  <section class="fit">
+    <div><h2>{both("Who it's for", "কাদের জন্য")}</h2>{bullet_list([
+        ("Club and society leads in colleges", "কলেজের ক্লাব আর সোসাইটির দায়িত্বে থাকা মানুষ"),
+        ("Admins of local Facebook and WhatsApp groups", "পাড়ার বা শহরের Facebook আর WhatsApp গ্রুপের অ্যাডমিন"),
+        ("Hobby groups: trekking, photography, books, music, board games, running",
+         "শখের দল: ট্রেকিং, ফটোগ্রাফি, বই, গান, বোর্ড গেম, দৌড়"),
+        ("Anyone who loves bringing people together, 18 or older",
+         "মানুষকে একসঙ্গে আনতে ভালোবাসেন এমন যে কেউ, বয়স ১৮ বা তার বেশি"),
+    ])}</div>
+    <div><h2>{both("What we ask", "আমরা যা চাই")}</h2>{bullet_list([
+        ("Host at least 2 addas in the first month after launch", "লঞ্চের পর প্রথম মাসে অন্তত ২টো আড্ডা বসান"),
+        ("Meet in public places only: cafes, parks, sports grounds", "দেখা শুধু সবার জন্য খোলা জায়গায়: ক্যাফে, পার্ক, খেলার মাঠ"),
+        ("No selling, recruiting or paid entry at addas", "আড্ডায় কিছু বিক্রি, লোক টানা বা টাকা নিয়ে ঢোকানো চলবে না"),
+        ("Tell us what works and what doesn't", "কী ভালো চলছে আর কী নয়, আমাদের জানান"),
+    ])}</div>
+  </section>
+  <section class="perks paper" aria-labelledby="get">
+    <h2 id="get">{both("As a Founding Host", "ফাউন্ডিং হোস্ট হিসেবে")}</h2>
+    {icon_list([
+        ("spark", "Try it before launch", "লঞ্চের আগেই চালান",
+         "We add you to the test, so your first tables are ready on day one.",
+         "আমরা আপনাকে টেস্টে যোগ করব, যাতে প্রথম দিনেই আপনার টেবিল তৈরি থাকে।"),
+        ("star", "Get featured", "আমাদের পেজে আপনি", "We introduce you and your group on our Instagram.",
+         "আমাদের Instagram-এ আপনাকে আর আপনার দলকে পরিচয় করিয়ে দিই।"),
+        ("chat", "A direct line to us", "সরাসরি আমাদের সঙ্গে কথা", "Ask for the features your group needs, and we listen.",
+         "আপনার দলের যা দরকার, সেই ফিচার চান, আমরা শুনি।"),
+        ("award", "Free premium for life", "সারাজীবন বিনামূল্যে প্রিমিয়াম", "Whatever premium features come later, you never pay.",
+         "পরে যে প্রিমিয়াম ফিচারই আসুক, আপনাকে টাকা দিতে হবে না।"),
+    ])}
+  </section>
+  <section class="cta-band">
+    {festoon()}
+    <h2>{both("Bring your people along", "আপনার মানুষদের সঙ্গে নিয়ে আসুন")}</h2>
+    <p>{both("We're picking our first hosts in Kolkata and around West Bengal.",
+             "কলকাতা আর পশ্চিমবঙ্গ জুড়ে আমরা প্রথম হোস্টদের বেছে নিচ্ছি।")}</p>
+    <div class="actions">{apply_btn}</div>
+  </section>"""
+    join_page("host.html", "host",
+              ("Host an adda | Bengali Adda", "আড্ডা বসান | বাঙালি আড্ডা"),
+              "Club leads, group admins and hobby groups: become a Founding Host and run your meetups as Adda Tables.",
+              ("Host addas your way", "নিজের মতো আড্ডা বসান",
+               "Run a book club, a trekking group, a board-game night or a local community? Bring it to Bengali Adda "
+               "as a Founding Host, and fill your meetups with people who share your interests.",
+               "বইয়ের ক্লাব, ট্রেকিংয়ের দল, বোর্ড গেমের সন্ধে বা পাড়ার কোনো কমিউনিটি চালান? ফাউন্ডিং হোস্ট হয়ে "
+               "বাঙালি আড্ডায় নিয়ে আসুন, আর একই শখের মানুষে ভরিয়ে তুলুন আপনার মিটআপ।",
+               apply_btn,
+               ("For club leads, group admins and anyone who brings people together. 18+ only.",
+                "ক্লাবের দায়িত্বে থাকা মানুষ, গ্রুপ অ্যাডমিন আর যাঁরা মানুষকে একসঙ্গে আনেন, তাঁদের জন্য। শুধু ১৮+।")),
+              adda_card("back", "Book club, College Street", "বইয়ের ক্লাব, কলেজ স্ট্রিট",
+                        "Sunday, 11 am", "রবিবার, সকাল ১১টা", 4, 8, full=False)
+              + adda_card("front", "Board-game night, Salt Lake", "বোর্ড গেমের সন্ধে, সল্টলেক",
+                          "Saturday, 7 pm", "শনিবার, সন্ধে ৭টা", 5, 8,
+                          tag=("Founding host", "ফাউন্ডিং হোস্ট")),
+              main)
+
+
 (ROOT / "img" / "alpana.svg").write_text(alpana_tile(), encoding="utf-8")
 home()
 download()
@@ -1227,8 +1460,11 @@ page("child-safety.html", "Child Safety Standards", "শিশু সুরক�
      f"Last updated: {UPDATED_EN}", f"সর্বশেষ আপডেট: {UPDATED_BN}",
      load("child.en.html"), load("child.bn.html"))
 adda()
+join_hub()
 ambassador()
 partners()
+creators()
+host()
 assetlinks()
 sitemap()
 print("built")
