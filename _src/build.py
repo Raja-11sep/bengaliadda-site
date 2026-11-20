@@ -348,6 +348,7 @@ def icon(name):
         "pin": '<path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/>',
         "lock": '<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
         "adult": '<circle cx="12" cy="12" r="9.5"/><text x="12" y="15" text-anchor="middle">18+</text>',
+        "cap": '<path d="M2.5 9.5L12 5l9.5 4.5L12 14z"/><path d="M6.5 11.5v4c1.5 1.5 3.5 2.2 5.5 2.2s4-.7 5.5-2.2v-4M21.5 9.5v5"/>',
         "award": '<circle cx="12" cy="9" r="5"/><path d="M9 13.5L7.5 21l4.5-2.5 4.5 2.5-1.5-7.5"/>',
         "star": '<path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/>',
         "spark": '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18"/>',
@@ -408,33 +409,34 @@ def adda_card(cls, title_en, title_bn, when_en, when_bn, taken, seats, tag=None,
 </div>"""
 
 
-# The story section: six moments of one friendship (pictures by tools/make_story.py).
+# The story section: six moments of one friendship. Pictures: img/story-1…6.webp, 1600 x 900 photos
+# (supplied Nov 2026; they replaced the drawings by tools/make_story.py). Also used on the Join us cards.
 # (big title in Bengali, its English line, text in English, text in Bengali, picture alt text)
 STORY = [
     ("নতুন শহর", "A new city",
      "New job, new city, and evenings at the window. Everyone is busy, and there's no one to share a bhaar of cha with.",
      "নতুন চাকরি, নতুন শহর, সন্ধেগুলো কাটে জানলার ধারে। সবাই ব্যস্ত, এক ভাঁড় চা খাওয়ার সঙ্গী নেই।",
-     "A young man sits alone at a window at night, looking out at the city lights"),
+     "A young man at his desk at night looks out of the window at Howrah Bridge under a full moon"),
     ("একটা হ্যালো", "A hello",
      "Bengali Adda shows someone nearby who also loves café adda and the hills. A wave, a wave back, and the chat opens.",
      "বাঙালি আড্ডা দেখাল কাছেই এমন একজনকে, যিনিও ক্যাফের আড্ডা আর পাহাড় ভালোবাসেন। হাত নাড়া, উত্তরে হাত নাড়া, আর চ্যাট খুলে গেল।",
-     "A phone on a window sill showing a suggestion and a waving hand"),
+     "Friends laughing at a cafe table in the evening, a phone on the table in front"),
     ("প্রথম আড্ডা", "The first adda",
      "Saturday, 5 pm, the para tea stall. Two cups of cha became six, and nobody looked at the time.",
      "শনিবার, বিকেল ৫টা, পাড়ার চায়ের দোকান। দু'ভাঁড় চা গড়াল ছ'ভাঁড়ে, ঘড়ি দেখল না কেউ।",
-     "Three friends on a bench in front of a lit tea stall in the evening"),
+     "Six friends on a bench at a lit tea stall in the evening, a tram passing behind"),
     ("বইমেলা", "Boi Mela",
      "An Adda Table at the Book Fair: four people, too many books, and one shared jhola.",
      "বইমেলায় একটা আড্ডা টেবিল: চারজন মানুষ, অনেক বেশি বই, আর একটাই ঝোলা।",
-     "Four friends at a book stall at the Kolkata Book Fair in the afternoon sun"),
+     "Four friends walking in through the Kolkata Book Fair gate"),
     ("মেলার রাত", "A night at the mela",
      "Lights, the nagordola and phuchka. Now there's always someone to say \u201ccholo\u201d.",
      "আলো, নাগরদোলা আর ফুচকা। এখন \u201cচলো\u201d বলার লোক সবসময় আছে।",
-     "Four friends at a fair at night, looking up at a lit giant wheel"),
+     "Friends at a fair at night, pointing up at a lit giant wheel"),
     ("ঘাটে সন্ধে", "Evenings at the ghat",
      "The city doesn't feel new any more. It feels like home. Find your people on Bengali Adda.",
      "শহরটা আর নতুন লাগে না, ঘর মনে হয়। বাঙালি আড্ডায় খুঁজে নিন আপনার মানুষদের।",
-     "Four friends on a ghat of the Ganga at sunset, Howrah Bridge behind them"),
+     "Five friends sitting on a ghat of the Ganga at sunset, Howrah Bridge and a boat in front of them"),
 ]
 
 
@@ -461,15 +463,18 @@ def story_section():
     Wide screens with story.js: the pictures sit in one sticky frame on the right and cross-fade
     as each chapter scrolls past on the left."""
     chapters, frame, dots = [], [], []
+    # Where each photo's people are, so the 3:2 frame keeps them in view (CSS object-position).
+    focus = ["80% 50%", "60% 50%", "50% 55%", "45% 55%", "55% 55%", "55% 60%"]
     for i, (title_bn, title_en, en, bn, alt) in enumerate(STORY):
         src = asset(f"img/story-{i + 1}.webp")
+        pos = f' style="object-position: {focus[i]}"'
         cta = f'<div class="actions">{get_app_button()}</div>' if i == len(STORY) - 1 else ""
         chapters.append(
             f'<li class="chapter" data-i="{i}">'
-            f'<figure class="ch-pic"><img src="{src}" alt="{alt}" width="1000" height="1200" loading="lazy" decoding="async"></figure>'
+            f'<figure class="ch-pic"><img src="{src}" alt="{alt}" width="1600" height="900"{pos} loading="lazy" decoding="async"></figure>'
             f'<div class="ch-text"><h3><span class="ch-bn" lang="bn">{title_bn}</span>'
             f'<span class="ch-en l" lang="en">{title_en}</span></h3><p>{both(en, bn)}</p>{cta}</div></li>')
-        frame.append(f'<img class="sf-pic{" on" if i == 0 else ""}" src="{src}" alt="" width="1000" height="1200" loading="lazy" decoding="async">')
+        frame.append(f'<img class="sf-pic{" on" if i == 0 else ""}" src="{src}" alt="" width="1600" height="900"{pos} loading="lazy" decoding="async">')
         dots.append(f'<span{" class=\"on\"" if i == 0 else ""}></span>')
     return f"""<section class="story" aria-labelledby="story-h">
     <div class="story-head">
@@ -1237,31 +1242,41 @@ def partners():
               main)
 
 
+def card_picture(story_file):
+    """A join card's picture: our own photo img/join-<n>.webp when it's there (n = the story picture's
+    number), otherwise the home page story picture."""
+    own = story_file.replace("story-", "join-")
+    return own if (ROOT / own).exists() else story_file
+
+
 def join_hub():
     """bengaliadda.in/join: every way to be part of Bengali Adda, one card each. Linked from the header
     and footer ("Join us"). Tried here first, then moved to monmela.in."""
     href, target = form_link("launch", "Name:\nCity or area:\nPhone or e-mail:\n")
     roles = [
-        ("adult", "Campus ambassador", "ক্যাম্পাস অ্যাম্বাসাডর",
+        ("cap", "img/story-4.webp", "Campus ambassador", "ক্যাম্পাস অ্যাম্বাসাডর",
          "College students who want to start addas on their campus.",
          "যে কলেজ পড়ুয়ারা নিজের ক্যাম্পাসে আড্ডা শুরু করতে চান।", "ambassador.html", None),
-        ("cup", "Venue or event partner", "জায়গা বা অনুষ্ঠানের পার্টনার",
+        ("cup", "img/story-3.webp", "Venue or event partner", "জায়গা বা অনুষ্ঠানের পার্টনার",
          "Cafes, restaurants, sports venues and college fests that welcome our groups.",
          "ক্যাফে, রেস্তোরাঁ, খেলার জায়গা আর কলেজ ফেস্ট, যাঁরা আমাদের দলকে স্বাগত জানান।", "partners.html", None),
-        ("star", "Creator", "ক্রিয়েটর",
+        ("star", "img/story-2.webp", "Creator", "ক্রিয়েটর",
          "Bengali creators on Instagram, YouTube and meme pages.",
          "Instagram, YouTube আর মিম পেজের বাঙালি ক্রিয়েটর।", "creators.html", None),
-        ("people", "Adda host", "আড্ডার হোস্ট",
+        ("people", "img/story-5.webp", "Adda host", "আড্ডার হোস্ট",
          "Club leads, group admins and hobby groups who bring people together.",
          "ক্লাবের দায়িত্বে থাকা মানুষ, গ্রুপ অ্যাডমিন আর শখের দল, যাঁরা মানুষকে একসঙ্গে আনেন।", "host.html", None),
-        ("spark", "Just tell me at launch", "লঞ্চ হলে জানান",
+        ("spark", "img/story-6.webp", "Just tell me at launch", "লঞ্চ হলে জানান",
          "Not ready to do more? Leave your details and we'll message you when the app opens to everyone.",
          "এখনই আর কিছু নয়? নিজের তথ্য দিয়ে রাখুন, অ্যাপ সবার জন্য খুললে আমরা জানাব।", href, target),
     ]
+    # Picture cards: the picture fills the card, a dusk shade rises from the bottom under the words,
+    # the icon sits in a white disc top left. The pictures are decorative (alt=""): the words say it all.
     cards = "".join(
-        f"""<li><a class="role" href="{link}"{tgt or ""}>{icon(i)}<h3>{both(t_en, t_bn)}</h3>
-      <p>{both(d_en, d_bn)}</p></a></li>"""
-        for i, t_en, t_bn, d_en, d_bn, link, tgt in roles)
+        f"""<li><a class="role" href="{link}"{tgt or ""}>
+      <img src="{asset(card_picture(img))}" alt="" loading="lazy">
+      {icon(i)}<span class="role-text"><h3>{both(t_en, t_bn)}</h3><p>{both(d_en, d_bn)}</p></span></a></li>"""
+        for i, img, t_en, t_bn, d_en, d_bn, link, tgt in roles)
     main = f"""  <section class="roles" aria-labelledby="ways">
     <h2 id="ways">{both("Choose your way in", "কীভাবে যুক্ত হবেন, বেছে নিন")}</h2>
     <ul>{cards}</ul>
